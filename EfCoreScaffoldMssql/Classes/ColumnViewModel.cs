@@ -1,0 +1,122 @@
+﻿using System;
+
+namespace EfCoreScaffoldMssql.Classes
+{
+    public class ColumnViewModel: ColumnDefinition
+    {
+        public bool IsString => CSharpType == "string";
+        public bool HasLengthLimit => MaxLength != -1;
+        public int MaxStringLength => TypeName == "nvarchar" || TypeName == "nchar" ? MaxLength / 2 : MaxLength;
+        public bool IsRequiredString => !IsNullable && IsString && !IsKey;
+
+        public bool IsKey { get; set; }
+        public int KeyColumnNumber { get; set; }
+
+        public bool IsForeignKey { get; set; }
+
+        public bool IsNonUnicodeString => TypeName == "varchar" || TypeName == "char";
+        public bool HasDefaultDefinition => !string.IsNullOrEmpty(DefaultDefinition);
+        public bool IsValueGeneratedNever => IsKey && !IsIdentity && !HasDefaultDefinition && !IsString && !IsForeignKey;
+
+        public bool HasModifiers => IsNonUnicodeString 
+            || HasDefaultDefinition 
+            || IsValueGeneratedNever
+            || IsIdentity;
+
+        public bool NeedTypeDefinition
+        {
+            get
+            {
+                switch (TypeName)
+                {
+                    case "date":
+                    case "time":
+                    case "datetime":
+                    case "datetime2":
+                    case "smalldatetime":
+                        return true;
+                }
+                return false;
+            }
+        }
+
+        public string CSharpType
+        {
+            get
+            {
+                var typeDef = CSharpTypeDefinition;
+                switch (typeDef)
+                {
+                    case "string":
+                    case "byte[]":
+                    case "object":
+                        return typeDef;
+                }
+
+                if (IsNullable)
+                    return typeDef + "?";
+
+                return typeDef;
+            }
+        }
+
+        public string CSharpTypeDefinition
+        {
+            get
+            {
+                switch (TypeName)
+                {
+                    case "uniqueidentifier":
+                        return nameof(Guid);
+
+                    case "date":
+                    case "time":
+                    case "datetime":
+                    case "datetime2":
+                    case "smalldatetime":
+                        return nameof(DateTime);
+
+                    case "tinyint":
+                        return nameof(Byte);
+
+                    case "smallint":
+                        return nameof(Int16);
+
+                    case "int":
+                        return "int";
+
+                    case "real":
+                        return nameof(Single);
+
+                    case "money":
+                    case "smallmoney":
+                    case "decimal":
+                    case "numeric":
+                        return "decimal";
+
+                    case "float":
+                        return "double";
+
+                    case "bit":
+                        return "bool";
+
+                    case "bigint":
+                        return nameof(Int64);
+
+                    case "binary":
+                    case "varbinary":
+                        return "byte[]";
+
+                    case "varchar":
+                    case "nvarchar":
+                    case "nchar":
+                    case "char":
+                        return "string";
+
+                    default:
+                        return "object";
+                }
+            }
+        }
+    }
+}

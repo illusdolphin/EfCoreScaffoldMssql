@@ -1,0 +1,43 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace {{Namespace}}
+{
+    public partial class {{EntityName}}
+    {
+        {{#if HasInverseSets}}
+        public {{EntityName}}()
+        {
+            {{#each InverseKeys}}
+            {{PropertyName}} = new HashSet<{{FkTable}}>();
+            {{/each}}
+        }
+        {{/if}}
+
+		{{#each Columns}}
+        {{#if IsRequiredString ~}}
+        [Required]
+        {{/if}}
+        {{#if IsString ~}}
+        {{#if HasLengthLimit ~}}
+        [StringLength({{MaxStringLength}})]
+        {{/if}}
+        {{/if}}
+        {{#if NeedTypeDefinition ~}}
+        [Column(TypeName = "{{TypeName}}")]
+        {{/if}}
+		public {{CSharpType}} {{Name}} { get; set; }
+		{{/each}}
+        {{#each ForeignKeys}}
+        [ForeignKey("{{FkColumn}}")]
+        [InverseProperty("{{InversePropertyName}}")]
+        public {{PkTable}} {{PropertyName}} { get; set; }
+        {{/each}}
+        {{#each InverseKeys}}
+        [InverseProperty("{{InversePropertyName}}")]
+        public ICollection<{{FkTable}}> {{PropertyName}} { get; set; }
+        {{/each}}
+    }
+}

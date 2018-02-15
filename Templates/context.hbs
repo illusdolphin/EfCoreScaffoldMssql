@@ -1,0 +1,49 @@
+using System;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+
+namespace {{Namespace}}
+{
+	public interface I{{ContextName}}
+	{
+        {{#each Entities}}
+        DbSet<{{EntityName}}> {{EntityName}} { get; set; }
+        {{/each}}
+	}
+
+    public partial class {{ContextName}} : DbContext, I{{ContextName}}
+    {
+        {{#each Entities}}
+        public virtual DbSet<{{EntityName}}> {{EntityName}} { get; set; }
+        {{/each}}
+        
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            {{#each Entities}}
+            modelBuilder.Entity<{{EntityName}}>(entity =>
+            {
+                {{#if HasKey}}
+                {{#unless HasSimpleKey}}
+                entity.HasKey(e => new { {{#each Keys}}e.{{ColumnName}}{{#unless @last}}, {{/unless}}{{/each}} });
+                {{/unless}}
+                {{/if}}
+                {{#each ColumnsEfPropertyOrder}}
+                {{#if HasModifiers}}
+                entity.Property(e => e.{{Name}})                                    
+                {{~ #if IsIdentity}}.ValueGeneratedOnAdd(){{/if}}
+                {{~ #if IsValueGeneratedNever}}.ValueGeneratedNever(){{/if}}
+                {{~ #if IsNonUnicodeString}}.IsUnicode(false){{/if}}
+                {{~ #if HasDefaultDefinition}}.HasDefaultValueSql("{{DefaultDefinition}}"){{/if}};
+                {{/if}}
+                {{/each}}
+                {{#each ForeignKeys}}
+                entity.HasOne(d => d.{{PropertyName}})
+                    .WithMany(p => p.{{InversePropertyName}})
+                    .HasForeignKey(d => d.{{FkColumn}})
+                    .HasConstraintName("{{FkName}}");
+                {{/each}}
+            });
+            {{/each}}
+        }
+    }
+}
