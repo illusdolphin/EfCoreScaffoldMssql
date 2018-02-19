@@ -30,7 +30,6 @@ namespace EfCoreScaffoldMssql.Classes
                 switch (TypeName)
                 {
                     case "date":
-                    case "time":
                     case "datetime":
                     case "datetime2":
                     case "smalldatetime":
@@ -70,11 +69,13 @@ namespace EfCoreScaffoldMssql.Classes
                         return nameof(Guid);
 
                     case "date":
-                    case "time":
                     case "datetime":
                     case "datetime2":
                     case "smalldatetime":
                         return nameof(DateTime);
+
+                    case "time":
+                        return nameof(TimeSpan);
 
                     case "tinyint":
                         return nameof(Byte);
