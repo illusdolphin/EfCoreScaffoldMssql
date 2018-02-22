@@ -1,22 +1,42 @@
-using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Threading.Tasks;
+using MAY.MDP.Model.Classes;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace {{Namespace}}
 {
-	public interface I{{ContextName}}
+	public interface IDatabaseContext
 	{
         {{#each Entities}}
-        DbSet<{{EntityName}}> {{EntityName}} { get; set; }
+        DbSet<{{EntityName}}> {{EntityPluralizedName}} { get; set; }
         {{/each}}
+		
+        Task<int> CommitChangesAsync(bool fireTriggers = true);
+
+        Task<AppTransaction> BeginTransactionAsync(IsolationLevel isolationLevel);
+        Task CompleteTransactionAsync(IDbContextTransaction transaction, bool isSuccess);
+        bool IsInTransaction { get; }
+
+        DbSet<TEntity> Set<TEntity>() where TEntity : class;
+        EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
+
+        Task BulkInsertAsync<T>(IList<T> entities);
+        void ResetChanges();
 	}
 
-    public partial class {{ContextName}} : DbContext, I{{ContextName}}
+    public partial class {{ContextName}} : DbContext
     {
         {{#each Entities}}
-        public virtual DbSet<{{EntityName}}> {{EntityName}} { get; set; }
+        public virtual DbSet<{{EntityName}}> {{EntityPluralizedName}} { get; set; }
         {{/each}}
-        
+
+        public {{ContextName}}(DbContextOptions<{{ContextName}}> options) : base(options)
+        {
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             {{#each Entities}}
@@ -27,13 +47,17 @@ namespace {{Namespace}}
                 entity.HasKey(e => new { {{#each Keys}}e.{{ColumnName}}{{#unless @last}}, {{/unless}}{{/each}} });
                 {{/unless}}
                 {{/if}}
+                {{#unless HasKey}}
+                entity.HasKey(e => new { {{#each Columns}}e.{{Name}}{{#unless @last}}, {{/unless}}{{/each}} });
+                {{/unless}}
                 {{#each ColumnsEfPropertyOrder}}
                 {{#if HasModifiers}}
                 entity.Property(e => e.{{Name}})                                    
                 {{~ #if IsIdentity}}.ValueGeneratedOnAdd(){{/if}}
                 {{~ #if IsValueGeneratedNever}}.ValueGeneratedNever(){{/if}}
                 {{~ #if IsNonUnicodeString}}.IsUnicode(false){{/if}}
-                {{~ #if HasDefaultDefinition}}.HasDefaultValueSql("{{DefaultDefinition}}"){{/if}};
+                {{~ #if HasDefaultDefinition}}.HasDefaultValueSql("{{DefaultDefinition}}"){{/if}}
+                {{~ #if HasComputedDefinitionSql}}.HasComputedColumnSql("{{HasComputedDefinitionSql}}"){{/if}};
                 {{/if}}
                 {{/each}}
                 {{#each ForeignKeys}}

@@ -12,6 +12,7 @@ namespace EfCoreScaffoldMssql.Classes
         public bool IsNullable { get; set; }
         public bool IsIdentity { get; set; }
         public string DefaultDefinition { get; set; }
+        public string ComputedDefinitionSql { get; set; }
         public int ColumnId { get; set; }
 
         public override string ToString()

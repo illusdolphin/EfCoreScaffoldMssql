@@ -19,11 +19,13 @@ JOIN Sys.schemas s on s.schema_id = t.schema_id";
 	c.is_nullable as IsNullable,
 	c.is_identity as IsIdentity,
     object_definition(c.default_object_id) AS DefaultDefinition,
+    cc.definition as ComputedDefinitionSql,
     c.column_id as ColumnId
 from Sys.columns c
 JOIN Sys.tables t on t.object_id = c.object_id
 JOIN Sys.schemas s on s.schema_id = t.schema_id
-JOIN Sys.types typ on c.user_type_id = typ.user_type_id";
+JOIN Sys.types typ on c.user_type_id = typ.user_type_id
+LEFT OUTER JOIN Sys.computed_columns cc on c.object_id = cc.object_id and c.column_id = cc.column_id";
 
         internal static string ViewColumnsSql = @"select 
 	c.name as [Name], 
@@ -35,11 +37,13 @@ JOIN Sys.types typ on c.user_type_id = typ.user_type_id";
 	c.is_nullable as IsNullable,
 	c.is_identity as IsIdentity,
     object_definition(c.default_object_id) AS DefaultDefinition,
+    cc.definition as ComputedColumnSql,
     c.column_id as ColumnId
 from Sys.columns c
 JOIN Sys.views v on v.object_id = c.object_id
 JOIN Sys.schemas s on s.schema_id = v.schema_id
-JOIN Sys.types typ on c.user_type_id = typ.user_type_id";
+JOIN Sys.types typ on c.user_type_id = typ.user_type_id
+LEFT OUTER JOIN Sys.computed_columns cc on c.object_id = cc.object_id and c.column_id = cc.column_id";
 
         internal static string ForeignKeysSql = @"SELECT RC.CONSTRAINT_NAME FkName
 , KF.TABLE_SCHEMA FkSchema

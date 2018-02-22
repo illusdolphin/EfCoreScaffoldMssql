@@ -16,6 +16,7 @@ namespace EfCoreScaffoldMssql.Classes
 
         public bool IsNonUnicodeString => TypeName == "varchar" || TypeName == "char";
         public bool HasDefaultDefinition => !string.IsNullOrEmpty(DefaultDefinition);
+        public bool HasComputedColumnSql => IsComputed && !IsKey;
         public bool IsValueGeneratedNever => IsKey && !IsIdentity && !HasDefaultDefinition && !IsString && !IsForeignKey;
 
         public bool HasModifiers => IsNonUnicodeString 

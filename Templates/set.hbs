@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace {{Namespace}}
 {
+    [Table("{{EntityName}}")]
     public partial class {{EntityName}}
     {
         {{#if HasInverseSets}}
@@ -16,16 +17,21 @@ namespace {{Namespace}}
         }
         {{/if}}
 
-		{{#each Columns}}
-        {{#if IsRequiredString ~}}
+	{{#each Columns}}
+	{{#if IsKey}}
+	{{#unless @root.HasDefaultSimpleKey}}
+	[Key]
+	{{/unless}}
+	{{/if}}
+        {{#if IsRequiredString }}
         [Required]
         {{/if}}
-        {{#if IsString ~}}
-        {{#if HasLengthLimit ~}}
+        {{#if IsString }}
+        {{#if HasLengthLimit }}
         [StringLength({{MaxStringLength}})]
         {{/if}}
         {{/if}}
-        {{#if NeedTypeDefinition ~}}
+        {{#if NeedTypeDefinition }}
         [Column(TypeName = "{{TypeName}}")]
         {{/if}}
 		public {{CSharpType}} {{Name}} { get; set; }
