@@ -22,7 +22,8 @@ namespace EfCoreScaffoldMssql.Classes
         public bool HasModifiers => IsNonUnicodeString 
             || HasDefaultDefinition 
             || IsValueGeneratedNever
-            || IsIdentity;
+            || IsIdentity
+			|| IsComputed;
 
         public bool NeedTypeDefinition
         {

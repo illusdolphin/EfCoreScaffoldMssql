@@ -19,7 +19,7 @@ JOIN Sys.schemas s on s.schema_id = t.schema_id";
 	c.is_nullable as IsNullable,
 	c.is_identity as IsIdentity,
     object_definition(c.default_object_id) AS DefaultDefinition,
-    cc.definition as ComputedDefinitionSql,
+    cc.definition as ComputedColumnSql,
     c.column_id as ColumnId
 from Sys.columns c
 JOIN Sys.tables t on t.object_id = c.object_id
