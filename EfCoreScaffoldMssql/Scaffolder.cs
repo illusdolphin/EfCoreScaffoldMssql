@@ -141,8 +141,31 @@ namespace EfCoreScaffoldMssql
 
                 ScaffoldObjects(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews);
 
+                var pKeys = new Dictionary<string, string>();
+                var fKeys = new Dictionary<string, string>();
+                foreach (var key in keyColumns)
+                {
+                    if (!pKeys.ContainsKey(key.TableName))
+                    {
+                        pKeys.Add(key.TableName, key.ColumnName);
+                    }
+                }
+
+                foreach (var key in fkDefinitions)
+                {
+                    if (!fKeys.ContainsKey(key.FkTable))
+                    {
+                        fKeys.Add(key.FkTable, key.FkColumn);
+                    }
+                }
+
                 foreach (var foreignKey in fkDefinitions)
                 {
+                    var isOneToOne = false;
+                    var keyValue = new KeyValuePair<string, string>(foreignKey.FkTable, foreignKey.FkColumn);
+                    if (pKeys.Intersect(fKeys).Contains(keyValue)) isOneToOne = true;
+
+
                     var originTable = entityViewModels.SingleOrDefault(x =>
                         x.SchemaName == foreignKey.PkSchema && x.EntityName == foreignKey.PkTable);
 
@@ -175,11 +198,13 @@ namespace EfCoreScaffoldMssql
                         var foreignKeyViewModel = foreignKey.CloneCopy<FkDefinition, ForeignKeyViewModel>();
                         foreignKeyViewModel.PropertyName = propertyName;
                         foreignKeyViewModel.InversePropertyName = inversePropertyName;
+                        foreignKeyViewModel.IsOneToOne = isOneToOne;
                         foreignTable.ForeignKeys.Add(foreignKeyViewModel);
 
                         var InverseKeyViewModel = foreignKey.CloneCopy<FkDefinition, ForeignKeyViewModel>();
                         InverseKeyViewModel.PropertyName = inversePropertyName;
                         InverseKeyViewModel.InversePropertyName = propertyName;
+                        InverseKeyViewModel.IsOneToOne = isOneToOne;
                         originTable.InverseKeys.Add(InverseKeyViewModel);
                     }
                 }

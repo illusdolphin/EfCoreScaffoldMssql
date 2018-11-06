@@ -5,5 +5,7 @@
         public string PropertyName { get; set; }
 
         public string InversePropertyName { get; set; }
+
+        public bool IsOneToOne { get; set; }
     }
 }
