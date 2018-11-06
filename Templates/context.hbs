@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
-using MAY.MDP.Model.Classes;
+using EDW.PersonData.Model.Classes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace {{Namespace}}
@@ -11,7 +13,7 @@ namespace {{Namespace}}
 	public interface IDatabaseContext
 	{
         {{#each Entities}}
-        DbSet<{{EntityName}}> {{EntityPluralizedName}} { get; set; }
+        DbSet<{{EntityName}}> {{EntityPluralizedName}} { get; }
         {{/each}}
 		
         Task<int> CommitChangesAsync(bool fireTriggers = true);
@@ -19,13 +21,19 @@ namespace {{Namespace}}
         Task<AppTransaction> BeginTransactionAsync(IsolationLevel isolationLevel);
         Task CompleteTransactionAsync(IDbContextTransaction transaction, bool isSuccess);
         bool IsInTransaction { get; }
+        Guid ContextId { get; }
 
         DbSet<TEntity> Set<TEntity>() where TEntity : class;
         EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
 
+        DatabaseFacade Database { get; }
+		
         Task BulkInsertAsync<T>(IList<T> entities);
         void ResetChanges();
-	}
+		
+        void OnAfterTransaction(Func<Task> handler);
+        void OnAfterCommit(Func<Task> handler);
+    }
 
     public partial class {{ContextName}} : DbContext
     {
@@ -57,14 +65,21 @@ namespace {{Namespace}}
                 {{~ #if IsValueGeneratedNever}}.ValueGeneratedNever(){{/if}}
                 {{~ #if IsNonUnicodeString}}.IsUnicode(false){{/if}}
                 {{~ #if HasDefaultDefinition}}.HasDefaultValueSql("{{DefaultDefinition}}"){{/if}}
-                {{~ #if HasComputedDefinitionSql}}.HasComputedColumnSql("{{HasComputedDefinitionSql}}"){{/if}};
+                {{~ #if HasComputedColumnSql}}.HasComputedColumnSql("{{ComputedColumnSql}}"){{/if}};
                 {{/if}}
                 {{/each}}
                 {{#each ForeignKeys}}
+                {{#if IsOneToOne }}
+                entity.HasOne(d => d.{{PropertyName}})
+                    .WithOne(p => p.{{InversePropertyName}})
+                    .HasForeignKey<{{InversePropertyName}}>(d => d.{{FkColumn}})
+                    .HasConstraintName("{{FkName}}");
+                {{else}}
                 entity.HasOne(d => d.{{PropertyName}})
                     .WithMany(p => p.{{InversePropertyName}})
                     .HasForeignKey(d => d.{{FkColumn}})
                     .HasConstraintName("{{FkName}}");
+                {{/if}}
                 {{/each}}
             });
             {{/each}}

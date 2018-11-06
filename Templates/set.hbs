@@ -12,17 +12,19 @@ namespace {{Namespace}}
         public {{EntityName}}()
         {
             {{#each InverseKeys}}
+            {{#unless IsOneToOne}}
             {{PropertyName}} = new HashSet<{{FkTable}}>();
+            {{/unless}}
             {{/each}}
         }
         {{/if}}
 
-	{{#each Columns}}
-	{{#if IsKey}}
-	{{#unless @root.HasDefaultSimpleKey}}
-	[Key]
-	{{/unless}}
-	{{/if}}
+		{{#each Columns}}
+	    {{#if IsKey}}
+		{{#unless @root.HasDefaultSimpleKey}}
+		[Key]
+		{{/unless}}
+		{{/if}}
         {{#if IsRequiredString }}
         [Required]
         {{/if}}
@@ -35,15 +37,21 @@ namespace {{Namespace}}
         [Column(TypeName = "{{TypeName}}")]
         {{/if}}
 		public {{CSharpType}} {{Name}} { get; set; }
+		
 		{{/each}}
         {{#each ForeignKeys}}
         [ForeignKey("{{FkColumn}}")]
         [InverseProperty("{{InversePropertyName}}")]
         public {{PkTable}} {{PropertyName}} { get; set; }
         {{/each}}
-        {{#each InverseKeys}}
+  		{{#each InverseKeys}}
+        {{#if IsOneToOne }}
+        [InverseProperty("{{InversePropertyName}}")]
+        public {{FkTable}} {{PropertyName}} { get; set; }
+        {{else}}
         [InverseProperty("{{InversePropertyName}}")]
         public ICollection<{{FkTable}}> {{PropertyName}} { get; set; }
+        {{/if}}		
         {{/each}}
     }
 }
