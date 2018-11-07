@@ -1,19 +1,21 @@
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
-using MAY.MDP.Model.Classes;
+using EDW.PersonData.Model.Classes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace {{Namespace}}
 {
-	public interface IDatabaseContext
-	{
+    public interface IDatabaseContext
+    {
         {{#each Entities}}
         DbSet<{{EntityName}}> {{EntityPluralizedName}} { get; set; }
         {{/each}}
-		
+        
         Task<int> CommitChangesAsync(bool fireTriggers = true);
 
         Task<AppTransaction> BeginTransactionAsync(IsolationLevel isolationLevel);
@@ -25,7 +27,7 @@ namespace {{Namespace}}
 
         Task BulkInsertAsync<T>(IList<T> entities);
         void ResetChanges();
-	}
+    }
 
     public partial class {{ContextName}} : DbContext
     {
@@ -61,10 +63,17 @@ namespace {{Namespace}}
                 {{/if}}
                 {{/each}}
                 {{#each ForeignKeys}}
+                {{#if IsOneToOne }}
+                entity.HasOne(d => d.{{PropertyName}})
+                    .WithOne(p => p.{{InversePropertyName}})
+                    .HasForeignKey<{{InversePropertyName}}>(d => d.{{FkColumn}})
+                    .HasConstraintName("{{FkName}}");
+                {{else}}
                 entity.HasOne(d => d.{{PropertyName}})
                     .WithMany(p => p.{{InversePropertyName}})
                     .HasForeignKey(d => d.{{FkColumn}})
                     .HasConstraintName("{{FkName}}");
+                {{/if}}
                 {{/each}}
             });
             {{/each}}
