@@ -58,6 +58,7 @@ namespace EfCoreScaffoldMssql
 
                 var tableKeys = keyColumns
                     .Where(x => x.TableSchema == table.SchemaName && x.TableName == table.EntityName)
+                    .OrderBy(x => x.KeyOrder)
                     .ToList();
 
                 var tableFks = fkDefinitions
