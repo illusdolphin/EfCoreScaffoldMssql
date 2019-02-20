@@ -56,21 +56,26 @@ LEFT OUTER JOIN Sys.computed_columns cc on c.object_id = cc.object_id and c.colu
 , RC.MATCH_OPTION MatchOption
 , RC.UPDATE_RULE UpdateRule
 , RC.DELETE_RULE DeleteRule
+, KP.ORDINAL_POSITION AS PkOrdinalPosition
+, KF.ORDINAL_POSITION AS FkOrdinalPosition
 FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS RC
 JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KF ON RC.CONSTRAINT_NAME = KF.CONSTRAINT_NAME
-JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KP ON RC.UNIQUE_CONSTRAINT_NAME = KP.CONSTRAINT_NAME";
+JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KP ON RC.UNIQUE_CONSTRAINT_NAME = KP.CONSTRAINT_NAME AND KF.ORDINAL_POSITION = KP.ORDINAL_POSITION";
 
-        internal static string KeyColumnsSql = @"select 
+        internal static string KeyColumnsSql = @"SELECT 
   s.name as TableSchema,
   t.name as TableName,
   c.name as ColumnName,
-  i.name as KeyName
+  i.name as KeyName,
+  ic.key_ordinal as KeyOrder
 from sys.tables t
-JOIN sys.schemas s on s.schema_id = t.schema_id
-JOIN sys.columns c on c.object_id = t.object_id
+JOIN sys.schemas s ON s.schema_id = t.schema_id
+JOIN sys.columns c ON c.object_id = t.object_id
 JOIN sys.index_columns ic ON ic.object_id = c.object_id AND ic.column_id = c.column_id
 JOIN sys.indexes i ON ic.object_id = i.object_id AND ic.index_id = i.index_id
 WHERE i.is_primary_key = 1";
+
+        internal static string DefaultSchemaSql = @"SELECT SCHEMA_NAME() AS SchemaName";
 
     }
 }

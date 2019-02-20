@@ -12,12 +12,12 @@ namespace EfCoreScaffoldMssql.Classes
         public bool IsKey { get; set; }
         public int KeyColumnNumber { get; set; }
 
-        public bool IsForeignKey { get; set; }
+        public bool IsPartOfForeignKey { get; set; }
 
         public bool IsNonUnicodeString => TypeName == "varchar" || TypeName == "char";
         public bool HasDefaultDefinition => !string.IsNullOrEmpty(DefaultDefinition);
         public bool HasComputedColumnSql => IsComputed && !IsKey;
-        public bool IsValueGeneratedNever => IsKey && !IsIdentity && !HasDefaultDefinition && !IsString && !IsForeignKey;
+        public bool IsValueGeneratedNever => IsKey && !IsIdentity && !HasDefaultDefinition && !IsString && !IsPartOfForeignKey;
 
         public bool HasModifiers => IsNonUnicodeString 
             || HasDefaultDefinition 

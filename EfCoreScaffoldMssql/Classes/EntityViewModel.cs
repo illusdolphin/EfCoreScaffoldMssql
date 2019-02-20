@@ -47,5 +47,6 @@ namespace EfCoreScaffoldMssql.Classes
         public List<ForeignKeyViewModel> ForeignKeys { get; set; }
 
         public List<ForeignKeyViewModel> InverseKeys { get; set; }
+        public bool IsDefaultSchema { get; set; }
     }
 }

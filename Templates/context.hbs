@@ -50,7 +50,7 @@ namespace {{Namespace}}
                 {{/unless}}
                 {{/if}}
                 {{#unless HasKey}}
-                entity.HasKey(e => new { {{#each Columns}}e.{{Name}}{{#unless @last}}, {{/unless}}{{/each}} });
+                entity.HasKey(e => new { {{#each Columns}}{{#unless IsNullable}}e.{{Name}}{{#unless @last}}, {{/unless}}{{/unless}}{{/each}} });
                 {{/unless}}
                 {{#each ColumnsEfPropertyOrder}}
                 {{#if HasModifiers}}
@@ -59,21 +59,28 @@ namespace {{Namespace}}
                 {{~ #if IsValueGeneratedNever}}.ValueGeneratedNever(){{/if}}
                 {{~ #if IsNonUnicodeString}}.IsUnicode(false){{/if}}
                 {{~ #if HasDefaultDefinition}}.HasDefaultValueSql("{{DefaultDefinition}}"){{/if}}
-                {{~ #if HasComputedDefinitionSql}}.HasComputedColumnSql("{{HasComputedDefinitionSql}}"){{/if}};
+                {{~ #if HasComputedColumnSql}}.HasComputedColumnSql("{{ComputedColumnSql}}"){{/if}};
                 {{/if}}
                 {{/each}}
                 {{#each ForeignKeys}}
-                {{#if IsOneToOne }}
+                {{#if IsOneToOne}}
                 entity.HasOne(d => d.{{PropertyName}})
                     .WithOne(p => p.{{InversePropertyName}})
-                    .HasForeignKey<{{InversePropertyName}}>(d => d.{{FkColumn}})
-                    .HasConstraintName("{{FkName}}");
+                {{#if IsCompositeKey}}
+                    .HasForeignKey<{{InverseEntityName}}>(d => new { {{#each FkColumns}}d.{{.}}{{#unless @last}}, {{/unless}}{{/each}} })
+                {{else}}
+                    .HasForeignKey<{{InverseEntityName}}>(d => {{#each FkColumns}}d.{{.}}{{/each}})
+                {{/if}}
                 {{else}}
                 entity.HasOne(d => d.{{PropertyName}})
                     .WithMany(p => p.{{InversePropertyName}})
-                    .HasForeignKey(d => d.{{FkColumn}})
-                    .HasConstraintName("{{FkName}}");
+                {{#if IsCompositeKey}}
+                    .HasForeignKey(d => new { {{#each FkColumns}}d.{{.}}{{#unless @last}}, {{/unless}}{{/each}} })
+                {{else}}
+                    .HasForeignKey(d => {{#each FkColumns}}d.{{.}}{{/each}})
                 {{/if}}
+                {{/if}}
+                    .HasConstraintName("{{FkName}}");
                 {{/each}}
             });
             {{/each}}

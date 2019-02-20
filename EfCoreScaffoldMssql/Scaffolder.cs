@@ -12,7 +12,7 @@ namespace EfCoreScaffoldMssql
 {
     public class Scaffolder
     {
-        private static readonly Regex removeIdRegex = new Regex("(?<content>.+)(Id)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex RemoveIdRegex = new Regex("(?<content>.+)(Id)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private readonly ScaffoldOptions _options;
 
         public Scaffolder(ScaffoldOptions options)
@@ -34,7 +34,8 @@ namespace EfCoreScaffoldMssql
             List<ColumnDefinition> columns, 
             List<KeyColumnDefinition> keyColumns,
             List<FkDefinition> fkDefinitions,
-            List<string> ignoreObjects)
+            List<string> ignoreObjects,
+            string defaultSchemaName)
         {
             keyColumns = keyColumns ?? new List<KeyColumnDefinition>();
             fkDefinitions = fkDefinitions ?? new List<FkDefinition>();
@@ -64,6 +65,7 @@ namespace EfCoreScaffoldMssql
                     .ToList();
 
                 entityViewModel.Keys = tableKeys;
+                entityViewModel.IsDefaultSchema = defaultSchemaName == entityViewModel.SchemaName;
 
                 foreach (var tableColumn in tableColumns.OrderBy(x => x.ColumnId))
                 {
@@ -73,8 +75,8 @@ namespace EfCoreScaffoldMssql
                     columnViewModel.IsKey = keyIndex > -1;
                     columnViewModel.KeyColumnNumber = keyIndex + 1;
 
-                    var hasFkDefinition = tableFks.Any(x => x.FkColumn == tableColumn.Name);
-                    columnViewModel.IsForeignKey = hasFkDefinition;
+                    var hasFkDefinition = tableFks.Any(x => x.FkColumns.Contains(tableColumn.Name));
+                    columnViewModel.IsPartOfForeignKey = hasFkDefinition;
 
                     entityViewModel.Columns.Add(columnViewModel);
                 }
@@ -117,7 +119,26 @@ namespace EfCoreScaffoldMssql
                 connection.Open();
                 WriteLine("Connected to the database");
 
-                var fkDefinitions = connection.ReadObjects<FkDefinition>(SchemaSql.ForeignKeysSql);
+                var fkDefinitionsSource = connection.ReadObjects<FkDefinitionSource>(SchemaSql.ForeignKeysSql);
+                var fkDefinitions =
+                    (from s in fkDefinitionsSource
+                    group s by new {s.PkSchema, s.FkSchema, s.FkTable, s.PkTable, s.FkName, s.PkName, s.MatchOption, s.UpdateRule, s.DeleteRule}
+                    into sGroup
+                    select new FkDefinition
+                    {
+                        PkSchema = sGroup.Key.PkSchema,
+                        FkSchema = sGroup.Key.FkSchema,
+                        PkTable = sGroup.Key.PkTable,
+                        FkTable = sGroup.Key.FkTable,
+                        PkName = sGroup.Key.PkName,
+                        FkName = sGroup.Key.FkName,
+                        MatchOption = sGroup.Key.MatchOption,
+                        DeleteRule = sGroup.Key.DeleteRule,
+                        UpdateRule = sGroup.Key.UpdateRule,
+                        PkColumns = sGroup.OrderBy(x => x.PkOrdinalPosition).Select(x => x.PkColumn).ToList(),
+                        FkColumns = sGroup.OrderBy(x => x.FkOrdinalPosition).Select(x => x.FkColumn).ToList()
+                    }).ToList();
+
                 WriteLine("Foreign keys information received");
 
                 var keyColumns = connection.ReadObjects<KeyColumnDefinition>(SchemaSql.KeyColumnsSql);
@@ -135,48 +156,65 @@ namespace EfCoreScaffoldMssql
                 var viewsColumns = connection.ReadObjects<ColumnDefinition>(SchemaSql.ViewColumnsSql);
                 WriteLine("Views columns information received");
 
+                var defaultSchemaName = connection.ReadObjects<SchemaDefinition>(SchemaSql.DefaultSchemaSql).First().SchemaName;
+
                 var entityViewModels = new List<EntityViewModel>();
 
-                ScaffoldObjects(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, _options.IgnoreTables);
+                ScaffoldObjects(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, _options.IgnoreTables, defaultSchemaName);
 
-                ScaffoldObjects(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews);
+                ScaffoldObjects(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews, defaultSchemaName);
 
-                var pKeys = new Dictionary<string, string>();
-                var fKeys = new Dictionary<string, string>();
-                foreach (var key in keyColumns)
-                {
-                    if (!pKeys.ContainsKey(key.TableName))
-                    {
-                        pKeys.Add(key.TableName, key.ColumnName);
-                    }
-                }
-
-                foreach (var key in fkDefinitions)
-                {
-                    if (!fKeys.ContainsKey(key.FkTable))
-                    {
-                        fKeys.Add(key.FkTable, key.FkColumn);
-                    }
-                }
+                var pKeys =
+                    (from pk in keyColumns
+                        group pk by new {pk.TableSchema, pk.TableName, pk.KeyName}
+                        into pkGroup
+                        select new
+                        {
+                            pkGroup.Key.TableSchema,
+                            pkGroup.Key.TableName,
+                            Columns = pkGroup.OrderBy(x => x.KeyOrder).Select(x => x.ColumnName).ToList()
+                        }).ToDictionary(x => $"{x.TableSchema}.{x.TableName}", x => x.Columns);
 
                 foreach (var foreignKey in fkDefinitions)
                 {
-                    var isOneToOne = false;
-                    var keyValue = new KeyValuePair<string, string>(foreignKey.FkTable, foreignKey.FkColumn);
-                    if (pKeys.Intersect(fKeys).Contains(keyValue)) isOneToOne = true;
-
-
+                    
                     var originTable = entityViewModels.SingleOrDefault(x =>
                         x.SchemaName == foreignKey.PkSchema && x.EntityName == foreignKey.PkTable);
 
                     var foreignTable = entityViewModels.SingleOrDefault(x =>
                         x.SchemaName == foreignKey.FkSchema && x.EntityName == foreignKey.FkTable);
 
+                    var isOneToOne = false;
+                    //Check one-2-one in case matched columns names and theirs orders
+                    var originTableFullName = $"{foreignKey.PkSchema}.{foreignKey.PkTable}";
+                    var foreignTableFullName = $"{foreignKey.FkSchema}.{foreignKey.FkTable}";
+                    if (pKeys.ContainsKey(originTableFullName) && pKeys.ContainsKey(foreignTableFullName))
+                    {
+                        var pKeyOrigin = pKeys[originTableFullName];
+                        var pKeyForeign = pKeys[foreignTableFullName];
+                        if (foreignKey.PkColumns.Count == foreignKey.FkColumns.Count && foreignKey.PkColumns.Count == pKeyOrigin.Count && foreignKey.PkColumns.Count == pKeyForeign.Count)
+                        {
+                            isOneToOne = true;
+                            for (var i = 0; i < pKeyOrigin.Count; i++)
+                            {
+                                if (pKeyOrigin[i] == foreignKey.PkColumns[i] && pKeyForeign[i] == foreignKey.FkColumns[i])
+                                {
+                                    continue;
+                                }
+                                isOneToOne = false;
+                                break;
+                            }
+                        }
+                    }
+
                     if (originTable != null && foreignTable != null)
                     {
-                        var fkColumn = foreignKey.FkColumn;
+                        var propertyName = string.Empty;
+                        foreach (var fkColumn in foreignKey.FkColumns)
+                        {
+                            propertyName = RemoveIdRegex.Replace(fkColumn, m => m.Groups["content"].Value).TrimEnd('_');
+                        }
 
-                        var propertyName = removeIdRegex.Replace(fkColumn, m => m.Groups["content"].Value).TrimEnd('_');
                         if (_options.ForeignPropertyRegex != null)
                         {
                             propertyName = Regex.Match(foreignKey.FkName, _options.ForeignPropertyRegex, RegexOptions.Singleline).Groups["PropertyName"].Value;
@@ -188,7 +226,10 @@ namespace EfCoreScaffoldMssql
                         }
 
                         var inversePropertyName = propertyName.ReplaceFirstOccurrance(originTable.EntityName, foreignTable.EntityName);
-                        inversePropertyName = StringHelper.Pluralize(inversePropertyName);
+                        if (!isOneToOne)
+                        {
+                            inversePropertyName = StringHelper.Pluralize(inversePropertyName);
+                        }
 
                         if (originTable == foreignTable)
                         {
@@ -198,14 +239,16 @@ namespace EfCoreScaffoldMssql
                         var foreignKeyViewModel = foreignKey.CloneCopy<FkDefinition, ForeignKeyViewModel>();
                         foreignKeyViewModel.PropertyName = propertyName;
                         foreignKeyViewModel.InversePropertyName = inversePropertyName;
+                        foreignKeyViewModel.InverseEntityName = originTable.EntityName;
                         foreignKeyViewModel.IsOneToOne = isOneToOne;
                         foreignTable.ForeignKeys.Add(foreignKeyViewModel);
 
-                        var InverseKeyViewModel = foreignKey.CloneCopy<FkDefinition, ForeignKeyViewModel>();
-                        InverseKeyViewModel.PropertyName = inversePropertyName;
-                        InverseKeyViewModel.InversePropertyName = propertyName;
-                        InverseKeyViewModel.IsOneToOne = isOneToOne;
-                        originTable.InverseKeys.Add(InverseKeyViewModel);
+                        var inverseKeyViewModel = foreignKey.CloneCopy<FkDefinition, ForeignKeyViewModel>();
+                        inverseKeyViewModel.PropertyName = inversePropertyName;
+                        inverseKeyViewModel.InversePropertyName = propertyName;
+                        foreignKeyViewModel.InverseEntityName = foreignTable.EntityName;
+                        inverseKeyViewModel.IsOneToOne = isOneToOne;
+                        originTable.InverseKeys.Add(inverseKeyViewModel);
                     }
                 }
 

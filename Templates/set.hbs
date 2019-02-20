@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace {{Namespace}}
 {
-    [Table("{{EntityName}}")]
+    [Table("{{EntityName}}"{{#unless IsDefaultSchema}}, Schema = "{{SchemaName}}"{{/unless}})]
     public partial class {{EntityName}}
     {
         {{#if HasInverseSets}}
@@ -40,7 +40,7 @@ namespace {{Namespace}}
         
         {{/each}}
         {{#each ForeignKeys}}
-        [ForeignKey("{{FkColumn}}")]
+        [ForeignKey("{{#each FkColumns}}{{.}}{{#unless @last}},{{/unless}}{{/each}}")]
         [InverseProperty("{{InversePropertyName}}")]
         public {{PkTable}} {{PropertyName}} { get; set; }
         {{/each}}

@@ -6,6 +6,7 @@
         public string TableName { get; set; }
         public string KeyName { get; set; }
         public string ColumnName { get; set; }
+        public int KeyOrder { get; set; }
 
         public override string ToString()
         {

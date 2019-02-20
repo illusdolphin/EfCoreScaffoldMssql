@@ -40,6 +40,7 @@
     <Compile Include="Classes\KeyColumnDefinition.cs" />
     <Compile Include="Classes\EntityDefinition.cs" />
     <Compile Include="Classes\EntityViewModel.cs" />
+    <Compile Include="Classes\SchemaDefinition.cs" />
     <Compile Include="Helpers\CloneHelper.cs" />
     <Compile Include="Helpers\CommandLineHelper.cs" />
     <Compile Include="Helpers\ConsoleHelper.cs" />
