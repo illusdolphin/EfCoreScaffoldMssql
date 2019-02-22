@@ -65,7 +65,8 @@ namespace EfCoreScaffoldMssql.Helpers
                     !text.EndsWith("ey", StringComparison.OrdinalIgnoreCase) &&
                     !text.EndsWith("iy", StringComparison.OrdinalIgnoreCase) &&
                     !text.EndsWith("oy", StringComparison.OrdinalIgnoreCase) &&
-                    !text.EndsWith("uy", StringComparison.OrdinalIgnoreCase))
+                    !text.EndsWith("uy", StringComparison.OrdinalIgnoreCase) &&
+                    !text.EndsWith("By", StringComparison.OrdinalIgnoreCase))
                 {
                     return text.Substring(0, text.Length - 1) + "ies";
                 }
@@ -88,7 +89,7 @@ namespace EfCoreScaffoldMssql.Helpers
                 {
                     return text + "es";
                 }
-                else if (text.EndsWith("f", StringComparison.InvariantCultureIgnoreCase) && text.Length > 1)
+                else if (text.EndsWith("f", StringComparison.InvariantCultureIgnoreCase) && !text.EndsWith("Off", StringComparison.InvariantCultureIgnoreCase) && text.Length > 1)
                 {
                     return text.Substring(0, text.Length - 1) + "ves";
                 }

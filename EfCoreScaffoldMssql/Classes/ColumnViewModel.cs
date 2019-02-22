@@ -80,7 +80,7 @@ namespace EfCoreScaffoldMssql.Classes
                         return nameof(TimeSpan);
 
                     case "tinyint":
-                        return nameof(Byte);
+                        return "byte";
 
                     case "smallint":
                         return nameof(Int16);
