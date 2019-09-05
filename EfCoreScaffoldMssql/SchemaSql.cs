@@ -27,7 +27,7 @@ JOIN Sys.tables t on t.object_id = c.object_id
 JOIN Sys.schemas s on s.schema_id = t.schema_id
 JOIN Sys.types typ on c.user_type_id = typ.user_type_id
 LEFT OUTER JOIN Sys.computed_columns cc on c.object_id = cc.object_id and c.column_id = cc.column_id
-LEFT JOIN sys.extended_properties AS p ON p.major_id=t.object_id AND p.minor_id=c.column_id AND p.class=1 AND p.name = 'TypeName'
+LEFT JOIN sys.extended_properties AS p ON p.major_id=t.object_id AND p.minor_id=c.column_id AND p.class=1 AND p.name = '{0}'
 ";
 
         internal static string ViewColumnsSql = @"select 
@@ -48,7 +48,7 @@ JOIN Sys.views v on v.object_id = c.object_id
 JOIN Sys.schemas s on s.schema_id = v.schema_id
 JOIN Sys.types typ on c.user_type_id = typ.user_type_id
 LEFT OUTER JOIN Sys.computed_columns cc on c.object_id = cc.object_id and c.column_id = cc.column_id
-LEFT JOIN sys.extended_properties AS p ON p.major_id=v.object_id AND p.minor_id=c.column_id AND p.class=1 AND p.name = 'TypeName'
+LEFT JOIN sys.extended_properties AS p ON p.major_id=v.object_id AND p.minor_id=c.column_id AND p.class=1 AND p.name = '{0}'
 ";
 
         internal static string ForeignKeysSql = @"SELECT RC.CONSTRAINT_NAME FkName 
