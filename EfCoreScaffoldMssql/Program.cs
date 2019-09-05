@@ -37,6 +37,7 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine("-FR,--foreign-key-regex <regex> - Regex to extract foreign property name. Example: 'FK_([a-zA-Z]+)_(?<PropertyName>.+)'");
                     Console.WriteLine("-CS,--connectionString <ConnectionString> - Connection string to the db, example: Data Source=.;Initial Catalog=Database;integrated security=SSPI");
                     Console.WriteLine("-TD,--templates-directory <Path> - Path with template fies set.hbs and context.hbs");
+                    Console.WriteLine("-ETN,--extended-property-type-name <Name> - Extended property name to read model property type from, default is 'TypeName'. If column does not have extended property then model property type is inferred from the database column type.");
                     Console.WriteLine("-V,--verbose <Schema> - Show messages during execution");
 
                     return;
@@ -78,6 +79,10 @@ namespace EfCoreScaffoldMssql
                                        ?? CommandLineHelper.GetParameterByName(args, "-TD")
                                        ?? Environment.CurrentDirectory;
 
+                var extendedPropertyTypeName = CommandLineHelper.GetParameterByName(args, "--extended-property-type-name")
+                                       ?? CommandLineHelper.GetParameterByName(args, "-ETN")
+                                       ?? "TypeName";
+
                 var isVerbose = CommandLineHelper.HasParameterByName(args, "--verbose")
                                 || CommandLineHelper.HasParameterByName(args, "-V");
 
@@ -105,7 +110,8 @@ namespace EfCoreScaffoldMssql
                     Namespace = @namespace,
                     ForeignPropertyRegex = fkPropertyRegex,
                     ContextName = contextName,
-                    IsVerbose = isVerbose
+                    IsVerbose = isVerbose,
+                    ExtendedPropertyTypeName = extendedPropertyTypeName
                 };
                 var scaffolder = new Scaffolder(options);
                 scaffolder.Generate();
