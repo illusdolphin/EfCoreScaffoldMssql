@@ -37,7 +37,8 @@ namespace EfCoreScaffoldMssql.Classes
                     case "smalldatetime":
                         return true;
                 }
-                return false;
+
+                return !string.IsNullOrWhiteSpace(ExtendedPropertiesTypeName);
             }
         }
 
