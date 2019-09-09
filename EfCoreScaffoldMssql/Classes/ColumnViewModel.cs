@@ -65,6 +65,12 @@ namespace EfCoreScaffoldMssql.Classes
         {
             get
             {
+                if (!string.IsNullOrWhiteSpace(ExtendedPropertiesTypeName))
+                {
+                    return ExtendedPropertiesTypeName;
+                }
+
+
                 switch (TypeName)
                 {
                     case "uniqueidentifier":
