@@ -151,10 +151,10 @@ namespace EfCoreScaffoldMssql
                 var views = connection.ReadObjects<EntityDefinition>(SchemaSql.ViewsSql);
                 WriteLine("Views information received");
 
-                var tablesColumns = connection.ReadObjects<ColumnDefinition>(SchemaSql.TableColumnsSql);
+                var tablesColumns = connection.ReadObjects<ColumnDefinition>(string.Format(SchemaSql.TableColumnsSql, _options.ExtendedPropertyTypeName));
                 WriteLine("Tables columns information received");
 
-                var viewsColumns = connection.ReadObjects<ColumnDefinition>(SchemaSql.ViewColumnsSql);
+                var viewsColumns = connection.ReadObjects<ColumnDefinition>(string.Format(SchemaSql.ViewColumnsSql, _options.ExtendedPropertyTypeName));
                 WriteLine("Views columns information received");
 
                 var defaultSchemaName = connection.ReadObjects<SchemaDefinition>(SchemaSql.DefaultSchemaSql).First().SchemaName;

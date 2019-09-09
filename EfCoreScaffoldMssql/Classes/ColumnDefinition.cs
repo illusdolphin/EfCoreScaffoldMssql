@@ -14,10 +14,11 @@ namespace EfCoreScaffoldMssql.Classes
         public string DefaultDefinition { get; set; }
         public string ComputedColumnSql { get; set; }
         public int ColumnId { get; set; }
+        public string ExtendedPropertiesTypeName { get; set; }
 
         public override string ToString()
         {
-            return $"{SchemaName}.{ObjectName}.{Name} {TypeName}[{MaxLength}]";
+            return $"{SchemaName}.{ObjectName}.{Name} {ExtendedPropertiesTypeName ?? TypeName}[{MaxLength}]";
         }
     }
 }

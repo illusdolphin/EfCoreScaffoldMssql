@@ -33,5 +33,6 @@ namespace EfCoreScaffoldMssql
         public List<string> IgnoreTables { get; set; }
 
         public List<string> IgnoreViews { get; set; }
+        public string ExtendedPropertyTypeName { get; set; }
     }
 }
