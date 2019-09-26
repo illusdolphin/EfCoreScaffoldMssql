@@ -11,6 +11,7 @@ namespace EfCoreScaffoldMssql.Classes
             Keys = new List<KeyColumnDefinition>();
             ForeignKeys = new List<ForeignKeyViewModel>();
             InverseKeys = new List<ForeignKeyViewModel>();
+            Dependencies = new List<Dependency>();
         }
 
         public string Namespace { get; set; }
@@ -47,6 +48,12 @@ namespace EfCoreScaffoldMssql.Classes
         public List<ForeignKeyViewModel> ForeignKeys { get; set; }
 
         public List<ForeignKeyViewModel> InverseKeys { get; set; }
+        public List<Dependency> Dependencies { get; set; }
         public bool IsDefaultSchema { get; set; }
+    }
+
+    public class Dependency
+    {
+        public string Name { get; set; }
     }
 }
