@@ -28,6 +28,17 @@ namespace EfCoreScaffoldMssql
             }
         }
 
+        private void AddDependencies(EntityViewModel entity, List<ColumnDefinition> columns)
+        {
+            if (columns.Any(x => x.TypeName == "geometry"))
+            {
+                entity.Dependencies.Add(new Dependency
+                {
+                    Name = "NetTopologySuite.Geometries"
+                });
+            }
+        }
+
         public void ScaffoldObjects(
             List<EntityViewModel> entities,
             List<EntityDefinition> objects, 
@@ -67,6 +78,8 @@ namespace EfCoreScaffoldMssql
 
                 entityViewModel.Keys = tableKeys;
                 entityViewModel.IsDefaultSchema = defaultSchemaName == entityViewModel.SchemaName;
+
+                AddDependencies(entityViewModel, tableColumns);
 
                 foreach (var tableColumn in tableColumns.OrderBy(x => x.ColumnId))
                 {
