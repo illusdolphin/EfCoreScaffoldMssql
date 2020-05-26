@@ -16,6 +16,8 @@ namespace EfCoreScaffoldMssql.Classes
 
         public string Namespace { get; set; }
 
+        public bool IsVirtual { get; set; }
+
         public bool HasForeignKeys => ForeignKeys.Any();
 
         public bool HasKey => Keys.Any();

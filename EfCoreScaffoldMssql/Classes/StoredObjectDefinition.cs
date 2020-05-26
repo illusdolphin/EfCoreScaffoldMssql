@@ -8,6 +8,7 @@ namespace EfCoreScaffoldMssql.Classes
     {
         public string Schema { get; set; }
         public string Name { get; set; }
+        public string ResultTypeName => Name + "_Result";
         public bool IsFunction { get; set; }
 
         public List<StoredObjectParameter> Parameters { get; set; }

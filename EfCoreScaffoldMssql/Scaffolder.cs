@@ -170,25 +170,36 @@ namespace EfCoreScaffoldMssql
                 var viewsColumns = connection.ReadObjects<ColumnDefinition>(string.Format(SchemaSql.ViewColumnsSql, _options.ExtendedPropertyTypeName));
                 WriteLine("Views columns information received");
 
-                var spDefinitions = GetStoredObjectsDefinition(connection, SchemaSql.StoredProcedureParametersSql, false);
-                WriteLine("Stored procedures parameters information received");
-
-                foreach (var sp in spDefinitions)
+                var spDefinitions = new List<StoredObjectDefinition>();
+                if (_options.GenerateStoredProcedures)
                 {
-                    WriteLine($"Reading schema for {sp.Schema}.{sp.Name}");
-                    var spSetDefinition = string.Format(SchemaSql.StoredProcedureSetSql, sp.Schema, sp.Name);
-                    var columns = connection.ReadObjects<StoredObjectSetColumn>(spSetDefinition);
-                    sp.Columns = columns;
+                    spDefinitions = GetStoredObjectsDefinition(connection, SchemaSql.StoredProcedureParametersSql, false);
+                    WriteLine("Stored procedures parameters information received");
+
+                    foreach (var sp in spDefinitions)
+                    {
+                        WriteLine($"Reading schema for {sp.Schema}.{sp.Name}");
+                        var spSetDefinition = string.Format(SchemaSql.StoredProcedureSetSql, sp.Schema, sp.Name);
+                        var columns = connection.ReadObjects<StoredObjectSetColumn>(spSetDefinition);
+                        sp.Columns = columns;
+                    }
                 }
 
-                var tvfDefinitions = GetStoredObjectsDefinition(connection, SchemaSql.TableValueFunctionParametersSql, true);
-                WriteLine("Table valued functions parameters information received");
+                var tvfDefinitions = new List<StoredObjectDefinition>();
 
-                var tvfColumns = connection.ReadObjects<TableValuedColumn>(SchemaSql.TableValueFunctionColumnsSql);
-                WriteLine("Table valued functions parameters information received");
-                foreach (var tvf in tvfDefinitions)
+                if (_options.GenerateTableValuedFunctions)
                 {
-                    tvf.Columns = tvfColumns.Where(c => c.Schema == tvf.Schema && c.FunctionName == tvf.Name).Cast<StoredObjectSetColumn>().ToList();
+                    tvfDefinitions = GetStoredObjectsDefinition(connection, SchemaSql.TableValueFunctionParametersSql, true);
+                    WriteLine("Table valued functions parameters information received");
+
+                    var tvfColumns = connection.ReadObjects<TableValuedColumn>(SchemaSql.TableValueFunctionColumnsSql);
+                    WriteLine("Table valued functions parameters information received");
+                    foreach (var tvf in tvfDefinitions)
+                    {
+                        tvf.Columns = tvfColumns
+                            .Where(c => c.Schema == tvf.Schema && c.FunctionName == tvf.Name)
+                            .Cast<StoredObjectSetColumn>().ToList();
+                    }
                 }
 
                 var defaultSchemaName = connection.ReadObjects<SchemaDefinition>(SchemaSql.DefaultSchemaSql).First().SchemaName;
@@ -298,6 +309,33 @@ namespace EfCoreScaffoldMssql
                     File.WriteAllText(setResultFileName, setResult);
 
                     fileNames.Add(setResultFileName);
+                }
+
+                if (_options.GenerateStoredProcedures)
+                {
+                    foreach (var p in spDefinitions.Where(x => x.Columns.Count > 0))
+                    {
+                        var model = new EntityViewModel
+                        {
+                            SchemaName = p.Schema,
+                            EntityName = p.ResultTypeName,
+                            Namespace = _options.Namespace,
+                            IsVirtual = true,
+                            Columns = p.Columns.Select(c => new ColumnViewModel
+                            {
+                                SchemaName = p.Schema,
+                                Name = c.Name,
+                                TypeName = c.SqlType,
+                                IsNullable = c.IsNullable
+                            }).ToList()
+                        };
+
+                        var setResult = templateSet(model);
+                        var setResultFileName = Path.Combine(modelsDirectory, p.ResultTypeName + ".cs");
+                        File.WriteAllText(setResultFileName, setResult);
+
+                        fileNames.Add(setResultFileName);
+                    }
                 }
 
                 var contextViewModel = new ContextViewModel

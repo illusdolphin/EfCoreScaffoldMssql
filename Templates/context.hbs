@@ -12,15 +12,13 @@ namespace {{Namespace}}
 {
     public interface IDatabaseContext
     {
-{{#each Entities}}
-        DbSet<{{EntityName}}>
-    {{EntityPluralizedName}} { get; }
+    {{#each Entities}}
+        DbSet<{{EntityName}}> {{EntityPluralizedName}} { get; }
     {{/each}}
 
     {{#each StoredProcedures}}
-    Task<int>
-        {{Name}}({{#each Parameters}}{{#if IsOutput}}out {{/if}}{{CSharpTypeDefinition}}{{#if IsNullableType}}?{{/if}} {{CSharpName}}{{#unless @last}}, {{/unless}}{{/each}});
-        {{/each}}
+        {{#unless Columns}}Task<int>{{/unless}}{{#if Columns}}IQueryable<{{ResultTypeName}}>{{/if}} {{Name}}({{#each Parameters}}{{#if IsOutput}}out {{/if}}{{CSharpTypeDefinition}}{{#if IsNullableType}}?{{/if}} {{CSharpName}}{{#unless @last}}, {{/unless}}{{/each}});
+    {{/each}}
         
         Task<int> CommitChangesAsync(bool fireTriggers = true);
 
@@ -60,7 +58,7 @@ namespace {{Namespace}}
                 {{/unless}}
                 {{#each ColumnsEfPropertyOrder}}
                 {{#if HasModifiers}}
-                entity.Property(e => e.{{Name}})                                    
+                entity.Property(e => e.{{Name}})
                 {{~ #if IsIdentity}}.ValueGeneratedOnAdd(){{/if}}
                 {{~ #if IsValueGeneratedNever}}.ValueGeneratedNever(){{/if}}
                 {{~ #if IsNonUnicodeString}}.IsUnicode(false){{/if}}
@@ -90,16 +88,25 @@ namespace {{Namespace}}
                 {{/each}}
             });
             {{/each}}
+            
+            {{#each StoredProcedures}}{{#if Columns}}
+            modelBuilder.Query<{{ResultTypeName}}>();
+            {{/if}}{{/each}}            
         }
 
         //https://stackoverflow.com/questions/59624695/entity-framework-core-3-1-return-value-int-from-stored-procedure
         {{#each StoredProcedures}}
-        public Task<int> {{Name}}({{#each Parameters}}{{#if IsOutput}}out {{/if}}{{CSharpTypeDefinition}}{{#if IsNullableType}}?{{/if}} {{CSharpName}}{{#unless @last}}, {{/unless}}{{/each}})
+        public {{#unless Columns}}Task<int>{{/unless}}{{#if Columns}}IQueryable<{{ResultTypeName}}>{{/if}} {{Name}}({{#each Parameters}}{{#if IsOutput}}out {{/if}}{{CSharpTypeDefinition}}{{#if IsNullableType}}?{{/if}} {{CSharpName}}{{#unless @last}}, {{/unless}}{{/each}})
         {
             {{#each Parameters}}
             var {{CSharpName}}Parameter = new SqlParameter("{{ParameterNameWithoutAt}}", {{#unless @IsOutput}}{{CSharpName}}{{/unless}}{{#if IsOutput}}"{{SqlType}}"{{/if}}){{#if IsOutput}}{Direction = ParameterDirection.Output}{{/if}};
             {{/each}}
+            {{#unless Columns}}
             return Database.ExecuteSqlRawAsync("EXEC {{Schema}}.{{Name}} {{#each Parameters}}{{ParameterName}}{{#if IsOutput}} OUTPUT{{/if}}{{#unless @last}}, {{/unless}}{{/each}}"{{#each Parameters}}, {{CSharpName}}Parameter{{/each}});
+            {{/unless}}
+            {{#if Columns}}
+            return Set<{{ResultTypeName}}>().FromSqlRaw("EXEC {{Schema}}.{{Name}} {{#each Parameters}}{{ParameterName}}{{#if IsOutput}} OUTPUT{{/if}}{{#unless @last}}, {{/unless}}{{/each}}"{{#each Parameters}}, {{CSharpName}}Parameter{{/each}});
+            {{/if}}
             {{#each Parameters}}{{#if IsOutput}}
             {{CSharpName}} = ({{CSharpTypeDefinition}}{{#if IsNullableType}}?{{/if}}){{CSharpName}}Parameter.Value;{{/if}}{{/each}}
         }
