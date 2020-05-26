@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace EfCoreScaffoldMssql.Helpers
 {
-    public static class DbsetHelper
+    public static class DbSetHelper
     {
         public static List<T> ReadObjects<T>(this SqlConnection connection, string sql)
             where T : class, new()

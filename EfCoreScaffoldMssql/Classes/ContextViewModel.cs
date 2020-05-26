@@ -10,9 +10,15 @@ namespace EfCoreScaffoldMssql.Classes
 
         public List<EntityViewModel> Entities { get; set; }
 
+        public List<StoredObjectDefinition> StoredProcedures { get; set; }
+
+        public List<StoredObjectDefinition> TableValuedFunctions { get; set; }
+
         public ContextViewModel()
         {
             Entities = new List<EntityViewModel>();
+            StoredProcedures = new List<StoredObjectDefinition>();
+            TableValuedFunctions = new List<StoredObjectDefinition>();
         }
     }
 }

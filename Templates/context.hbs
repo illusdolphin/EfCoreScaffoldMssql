@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
-using EDW.PersonData.Model.Classes;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -12,8 +12,14 @@ namespace {{Namespace}}
 {
     public interface IDatabaseContext
     {
-        {{#each Entities}}
-        DbSet<{{EntityName}}> {{EntityPluralizedName}} { get; set; }
+{{#each Entities}}
+        DbSet<{{EntityName}}>
+    {{EntityPluralizedName}} { get; }
+    {{/each}}
+
+    {{#each StoredProcedures}}
+    Task<int>
+        {{Name}}({{#each Parameters}}{{#if IsOutput}}out {{/if}}{{CSharpTypeDefinition}}{{#if IsNullableType}}?{{/if}} {{CSharpName}}{{#unless @last}}, {{/unless}}{{/each}});
         {{/each}}
         
         Task<int> CommitChangesAsync(bool fireTriggers = true);
@@ -85,5 +91,19 @@ namespace {{Namespace}}
             });
             {{/each}}
         }
+
+        //https://stackoverflow.com/questions/59624695/entity-framework-core-3-1-return-value-int-from-stored-procedure
+        {{#each StoredProcedures}}
+        public Task<int> {{Name}}({{#each Parameters}}{{#if IsOutput}}out {{/if}}{{CSharpTypeDefinition}}{{#if IsNullableType}}?{{/if}} {{CSharpName}}{{#unless @last}}, {{/unless}}{{/each}})
+        {
+            {{#each Parameters}}
+            var {{CSharpName}}Parameter = new SqlParameter("{{ParameterNameWithoutAt}}", {{#unless @IsOutput}}{{CSharpName}}{{/unless}}{{#if IsOutput}}"{{SqlType}}"{{/if}}){{#if IsOutput}}{Direction = ParameterDirection.Output}{{/if}};
+            {{/each}}
+            return Database.ExecuteSqlRawAsync("EXEC {{Schema}}.{{Name}} {{#each Parameters}}{{ParameterName}}{{#if IsOutput}} OUTPUT{{/if}}{{#unless @last}}, {{/unless}}{{/each}}"{{#each Parameters}}, {{CSharpName}}Parameter{{/each}});
+            {{#each Parameters}}{{#if IsOutput}}
+            {{CSharpName}} = ({{CSharpTypeDefinition}}{{#if IsNullableType}}?{{/if}}){{CSharpName}}Parameter.Value;{{/if}}{{/each}}
+        }
+
+        {{/each}}
     }
 }

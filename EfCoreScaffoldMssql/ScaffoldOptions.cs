@@ -10,6 +10,7 @@ namespace EfCoreScaffoldMssql
             Schemas = new List<string>();
             IgnoreTables = new List<string>();
             IgnoreViews = new List<string>();
+            IgnoreStoredProcedure = new List<string>();
         }
 
         public string ConnectionString { get; set; }
@@ -33,6 +34,17 @@ namespace EfCoreScaffoldMssql
         public List<string> IgnoreTables { get; set; }
 
         public List<string> IgnoreViews { get; set; }
+
+        public bool GenerateStoredProcedures { get; set; }
+
+        public List<string> IgnoreStoredProcedure { get; set; }
+
+        public bool GenerateTableValuedFunctions { get; set; }
+
+        public List<string> IgnoreTableValuedFunctions { get; set; }
+
         public string ExtendedPropertyTypeName { get; set; }
+
+        public bool CleanUp { get; set; }
     }
 }

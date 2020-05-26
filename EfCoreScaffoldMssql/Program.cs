@@ -32,6 +32,8 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine($"-C,--context <Name> - name for context, default is '{defaultContext}'");
                     Console.WriteLine($"-M,--models <Path> - path for models, default is '{defaultModels}'");
                     Console.WriteLine("-S,--schema <Schema> - comma-separated list of schema to include, default is not defined, meaning is to include all");
+                    Console.WriteLine("-SP,--stored-procedures - comma-separated list of SPs to include, if list is empty - all are generated");
+                    //TODO: Console.WriteLine("-TVF,--table-value-functions - comma-separated list of TVFs to include, if list is empty - all are generated");
                     Console.WriteLine("-IT,--ignore-tables <Tables> - comma-separated list of tables to exclude. Example: '[dbo].Table1,[master].Table2'");
                     Console.WriteLine("-IV,--ignore-views <Views> - comma-separated list of view to exclude. Example: '[dbo].View1,[master].View2'");
                     Console.WriteLine("-FR,--foreign-key-regex <regex> - Regex to extract foreign property name. Example: 'FK_([a-zA-Z]+)_(?<PropertyName>.+)'");
@@ -67,6 +69,23 @@ namespace EfCoreScaffoldMssql
                                     ?? CommandLineHelper.GetParameterByName(args, "-IV")
                                     ?? string.Empty;
 
+                var cleanUp = (CommandLineHelper.GetParameterByName(args, "--clean-up")
+                                    ?? CommandLineHelper.GetParameterByName(args, "-CU")) != null;
+
+                var generateStoredProcedures = CommandLineHelper.HasParameterByName(args, "--stored-procedures")
+                               || CommandLineHelper.HasParameterByName(args, "-SP");
+
+                var ignoreStoredProcedures = CommandLineHelper.GetParameterByName(args, "--ignore-stored-procedures")
+                                       ?? CommandLineHelper.GetParameterByName(args, "-ISP")
+                                       ?? string.Empty;
+
+                var generateTableValueFunctions = CommandLineHelper.HasParameterByName(args, "--table-valued-functions")
+                                               || CommandLineHelper.HasParameterByName(args, "-TVF");
+
+                var ignoreTableValuedFunctions = CommandLineHelper.GetParameterByName(args, "--ignore-table-valued-functions")
+                                             ?? CommandLineHelper.GetParameterByName(args, "-ITVF")
+                                             ?? string.Empty;
+
                 var fkPropertyRegex = CommandLineHelper.GetParameterByName(args, "--foreign-key-regex")
                                        ?? CommandLineHelper.GetParameterByName(args, "-FR")
                                        ?? string.Empty;
@@ -95,6 +114,12 @@ namespace EfCoreScaffoldMssql
                 var excludeViewsList = excludeViews.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToLower())
                     .ToList();
+                var excludeStoredProceduresList = ignoreStoredProcedures.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.ToLower())
+                    .ToList();
+                var excludeTableValuedFunctionsList = ignoreTableValuedFunctions.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.ToLower())
+                    .ToList();
 
                 var directory = Environment.CurrentDirectory;
 
@@ -107,11 +132,16 @@ namespace EfCoreScaffoldMssql
                     Schemas = includeSchemas,
                     IgnoreTables = excludeTablesList,
                     IgnoreViews = excludeViewsList,
+                    GenerateStoredProcedures = generateStoredProcedures,
+                    IgnoreStoredProcedure = excludeStoredProceduresList,
+                    GenerateTableValuedFunctions = generateTableValueFunctions,
+                    IgnoreTableValuedFunctions = excludeTableValuedFunctionsList,
                     Namespace = @namespace,
                     ForeignPropertyRegex = fkPropertyRegex,
                     ContextName = contextName,
                     IsVerbose = isVerbose,
-                    ExtendedPropertyTypeName = extendedPropertyTypeName
+                    ExtendedPropertyTypeName = extendedPropertyTypeName,
+                    CleanUp = cleanUp
                 };
                 var scaffolder = new Scaffolder(options);
                 scaffolder.Generate();

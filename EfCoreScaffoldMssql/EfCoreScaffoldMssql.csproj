@@ -41,10 +41,12 @@
     <Compile Include="Classes\EntityDefinition.cs" />
     <Compile Include="Classes\EntityViewModel.cs" />
     <Compile Include="Classes\SchemaDefinition.cs" />
+    <Compile Include="Classes\StoredObjectDefinition.cs" />
     <Compile Include="Helpers\CloneHelper.cs" />
     <Compile Include="Helpers\CommandLineHelper.cs" />
     <Compile Include="Helpers\ConsoleHelper.cs" />
-    <Compile Include="Helpers\DbsetHelper.cs" />
+    <Compile Include="Helpers\DbSetHelper.cs" />
+    <Compile Include="Helpers\SqlTypeHelper.cs" />
     <Compile Include="Helpers\StringHelper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -87,5 +87,53 @@ WHERE i.is_primary_key = 1";
 
         internal static string DefaultSchemaSql = @"SELECT SCHEMA_NAME() AS SchemaName";
 
+        internal static string StoredProcedureParametersSql = @"SELECT  
+s.[name] AS [Schema],
+p.[name] AS [Name],
+par.[name] AS [ParameterName],
+par.is_output AS [IsOutput],
+par.is_nullable AS [IsNullable],
+type_name(user_type_id) AS [SqlType],  
+max_length AS [MaxLength],  
+CASE WHEN type_name(system_type_id) = 'uniqueidentifier' THEN par.[precision] ELSE OdbcPrec(system_type_id, max_length, par.[precision]) END AS [Precision],  
+OdbcScale(system_type_id, scale) AS [Scale],  
+parameter_id AS [Order],  
+CONVERT(sysname, CASE WHEN system_type_id in (35, 99, 167, 175, 231, 239) THEN ServerProperty('collation') END) AS [Collation]  
+FROM sys.procedures p
+LEFT JOIN sys.parameters par on par.object_id = p.object_id
+JOIN sys.schemas s ON s.schema_id = p.schema_id";
+
+        internal static string StoredProcedureSetSql = @"SELECT 
+name AS [Name],
+column_ordinal AS [Order],
+is_nullable AS [IsNullable],
+type_name(system_type_id) AS [SqlType],
+max_length AS [MaxLength]
+FROM sys.dm_exec_describe_first_result_set ('{0}.{1}', NULL, 0)";
+
+        internal static string TableValueFunctionParametersSql = @"SELECT 
+	SCHEMA_NAME(obj.schema_id) AS [Schema],
+	obj.[name] as [Name],
+	p.[name] AS [ParameterName],
+    CONVERT(bit, 0) AS [IsOutput],
+	p.is_nullable AS [IsNullable],
+	type_name(p.system_type_id) AS [SqlType],
+	p.parameter_id AS [Order]
+FROM sys.objects obj
+JOIN sys.schemas s ON s.schema_id = obj.schema_id
+LEFT JOIN sys.all_parameters p on p.object_id = obj.object_id
+WHERE type = 'IF'";
+
+        internal static string TableValueFunctionColumnsSql = @"SELECT 
+	SCHEMA_NAME(obj.schema_id) AS [Schema],
+    obj.[name] AS [FunctionName],
+	c.[name] AS [Name],
+	c.is_nullable AS [IsNullable],
+	type_name(c.system_type_id) AS [SqlType],
+	c.column_id AS [Order]
+FROM sys.columns c
+JOIN sys.objects obj ON obj.object_id = c.object_id
+JOIN sys.schemas s ON s.schema_id = obj.schema_id
+WHERE obj.[type] = 'IF'";
     }
 }

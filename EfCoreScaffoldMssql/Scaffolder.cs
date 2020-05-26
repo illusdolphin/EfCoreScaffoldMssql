@@ -39,7 +39,7 @@ namespace EfCoreScaffoldMssql
             }
         }
 
-        public void ScaffoldObjects(
+        public void ScaffoldEntities(
             List<EntityViewModel> entities,
             List<EntityDefinition> objects, 
             List<ColumnDefinition> columns, 
@@ -170,13 +170,34 @@ namespace EfCoreScaffoldMssql
                 var viewsColumns = connection.ReadObjects<ColumnDefinition>(string.Format(SchemaSql.ViewColumnsSql, _options.ExtendedPropertyTypeName));
                 WriteLine("Views columns information received");
 
+                var spDefinitions = GetStoredObjectsDefinition(connection, SchemaSql.StoredProcedureParametersSql, false);
+                WriteLine("Stored procedures parameters information received");
+
+                foreach (var sp in spDefinitions)
+                {
+                    WriteLine($"Reading schema for {sp.Schema}.{sp.Name}");
+                    var spSetDefinition = string.Format(SchemaSql.StoredProcedureSetSql, sp.Schema, sp.Name);
+                    var columns = connection.ReadObjects<StoredObjectSetColumn>(spSetDefinition);
+                    sp.Columns = columns;
+                }
+
+                var tvfDefinitions = GetStoredObjectsDefinition(connection, SchemaSql.TableValueFunctionParametersSql, true);
+                WriteLine("Table valued functions parameters information received");
+
+                var tvfColumns = connection.ReadObjects<TableValuedColumn>(SchemaSql.TableValueFunctionColumnsSql);
+                WriteLine("Table valued functions parameters information received");
+                foreach (var tvf in tvfDefinitions)
+                {
+                    tvf.Columns = tvfColumns.Where(c => c.Schema == tvf.Schema && c.FunctionName == tvf.Name).Cast<StoredObjectSetColumn>().ToList();
+                }
+
                 var defaultSchemaName = connection.ReadObjects<SchemaDefinition>(SchemaSql.DefaultSchemaSql).First().SchemaName;
 
                 var entityViewModels = new List<EntityViewModel>();
 
-                ScaffoldObjects(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, _options.IgnoreTables, defaultSchemaName);
+                ScaffoldEntities(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, _options.IgnoreTables, defaultSchemaName);
 
-                ScaffoldObjects(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews, defaultSchemaName);
+                ScaffoldEntities(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews, defaultSchemaName);
 
                 var pKeys =
                     (from pk in keyColumns
@@ -266,24 +287,70 @@ namespace EfCoreScaffoldMssql
                     }
                 }
 
+                var fileNames = new List<string>();
                 var modelsDirectory = Path.Combine(_options.Directory, _options.ModelsPath);
                 Directory.CreateDirectory(modelsDirectory);
 
                 foreach (var tableViewModel in entityViewModels)
                 {
                     var setResult = templateSet(tableViewModel);
-                    File.WriteAllText(Path.Combine(modelsDirectory, tableViewModel.EntityName + ".cs"), setResult);
+                    var setResultFileName = Path.Combine(modelsDirectory, tableViewModel.EntityName + ".cs");
+                    File.WriteAllText(setResultFileName, setResult);
+
+                    fileNames.Add(setResultFileName);
                 }
 
                 var contextViewModel = new ContextViewModel
                 {
                     ContextName = _options.ContextName,
                     Namespace = _options.Namespace,
-                    Entities = entityViewModels
+                    Entities = entityViewModels,
+                    StoredProcedures = spDefinitions,
+                    TableValuedFunctions = tvfDefinitions
                 };
                 var contextResult = templateContext(contextViewModel);
-                File.WriteAllText(Path.Combine(modelsDirectory, contextViewModel.ContextName + ".cs"), contextResult);
+                var contextResultFileName = Path.Combine(modelsDirectory, contextViewModel.ContextName + ".cs");
+                File.WriteAllText(contextResultFileName, contextResult);
+
+                fileNames.Add(contextResultFileName);
+
+                if (_options.CleanUp)
+                {
+                    var directoryFiles = Directory.GetFiles(modelsDirectory, "*.cs");
+
+                    var filesToCleanUp = directoryFiles.Except(fileNames);
+
+                    foreach (var s in filesToCleanUp)
+                    {
+                        File.Delete(s);
+                    }
+                }
             }
+        }
+
+        private List<StoredObjectDefinition> GetStoredObjectsDefinition(SqlConnection connection, string sql, bool isFunction)
+        {
+            var storedProcedureParameters = connection.ReadObjects<StoredObjectParameter>(sql);
+            var spDefinitions = (from p in storedProcedureParameters
+                group p by new { p.Schema, p.Name }
+                into sGroup
+                select new StoredObjectDefinition
+                {
+                    Schema = sGroup.Key.Schema,
+                    Name = sGroup.Key.Name,
+                    IsFunction = isFunction,
+                    Parameters = sGroup.Where(p => !string.IsNullOrEmpty(p.ParameterName)).Select(p => new StoredObjectParameter
+                    {
+                        ParameterName = p.ParameterName,
+                        Schema = sGroup.Key.Schema,
+                        Name = sGroup.Key.Name,
+                        Order = p.Order,
+                        IsOutput = p.IsOutput,
+                        IsNullable = p.IsNullable,
+                        SqlType = p.SqlType
+                    }).OrderBy(p => p.Order).ToList()
+                }).ToList();
+            return spDefinitions;
         }
     }
 }

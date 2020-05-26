@@ -20,6 +20,16 @@ namespace EfCoreScaffoldMssql.Helpers
             return original.Remove(loc, oldValue.Length).Insert(loc, newValue);
         }
 
+        public static string UpperCaseFirstChar(this string value)
+        {
+            return value.Substring(0, 1).ToUpper() + value.Substring(1);
+        }
+
+        public static string LowerCaseFirstChar(this string value)
+        {
+            return value.Substring(0, 1).ToLower() + value.Substring(1);
+        }
+
         /// <summary>
         /// Attempts to pluralize the specified text according to the rules of the English language.
         /// </summary>
@@ -53,9 +63,26 @@ namespace EfCoreScaffoldMssql.Helpers
                     {"tooth", "teeth"},
                     {"foot", "feet"},
                     {"mouse", "mice"},
-                    {"belief", "beliefs"}
+                    {"belief", "beliefs"},
+                    {"staff", "staffs"}
                 };
 
+                foreach (var exception in exceptions.Keys)
+                {
+                    if (text.EndsWith(exception))
+                    {
+                        return text.Substring(0, text.Length - exception.Length) + exceptions[exception];
+                    }
+                    var upperCaseException = exception.UpperCaseFirstChar();
+
+                    if (text.EndsWith(upperCaseException))
+                    {
+                        var result = exceptions[exception];
+                        var upperCaseResult = result.UpperCaseFirstChar();
+
+                        return text.Substring(0, text.Length - upperCaseException.Length) + upperCaseResult;
+                    }
+                }
                 if (exceptions.ContainsKey(text.ToLowerInvariant()))
                 {
                     return exceptions[text.ToLowerInvariant()];
