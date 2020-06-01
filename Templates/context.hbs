@@ -88,10 +88,13 @@ namespace {{Namespace}}
                 {{/each}}
             });
             {{/each}}
-            
+
             {{#each StoredProcedures}}{{#if Columns}}
             modelBuilder.Query<{{ResultTypeName}}>();
-            {{/if}}{{/each}}            
+            {{/if}}{{/each}}
+	        {{#each TableValuedFunctions}}{{#if Columns}}
+            modelBuilder.Query<{{ResultTypeName}}>();
+            {{/if}}{{/each}}     
         }
 
         //https://stackoverflow.com/questions/59624695/entity-framework-core-3-1-return-value-int-from-stored-procedure
@@ -109,6 +112,15 @@ namespace {{Namespace}}
             {{/if}}
             {{#each Parameters}}{{#if IsOutput}}
             {{CSharpName}} = ({{CSharpTypeDefinition}}{{#if IsNullableType}}?{{/if}}){{CSharpName}}Parameter.Value;{{/if}}{{/each}}
+        }
+
+        {{/each}}
+		
+        //https://stackoverflow.com/questions/59624695/entity-framework-core-3-1-return-value-int-from-stored-procedure
+        {{#each TableValuedFunctions}}
+        public IQueryable<{{ResultTypeName}}> {{Name}}({{#each Parameters}}{{CSharpTypeDefinition}}{{#if IsNullableType}}?{{/if}} {{CSharpName}}{{#unless @last}}, {{/unless}}{{/each}})
+        {
+            return Set<{{ResultTypeName}}>().FromSqlInterpolated($"SELECT {{#each Columns}}[{{Name}}]{{#unless @last}}, {{/unless}}{{/each}} FROM {{Schema}}.{{Name}}({{#each Parameters}}{ {{CSharpName}} }{{#unless @last}}, {{/unless}}{{/each}})");
         }
 
         {{/each}}

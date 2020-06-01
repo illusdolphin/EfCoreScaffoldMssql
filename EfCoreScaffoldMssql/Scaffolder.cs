@@ -14,6 +14,7 @@ namespace EfCoreScaffoldMssql
     {
         private static readonly Regex RemoveIdRegex = new Regex("(?<content>.+)(Id)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private readonly ScaffoldOptions _options;
+        private static readonly Regex ColumnValidRegex = new Regex("^[a-zA-Z0-9_]+$", RegexOptions.Compiled);
 
         public Scaffolder(ScaffoldOptions options)
         {
@@ -181,7 +182,7 @@ namespace EfCoreScaffoldMssql
                         WriteLine($"Reading schema for {sp.Schema}.{sp.Name}");
                         var spSetDefinition = string.Format(SchemaSql.StoredProcedureSetSql, sp.Schema, sp.Name);
                         var columns = connection.ReadObjects<StoredObjectSetColumn>(spSetDefinition);
-                        sp.Columns = columns;
+                        sp.Columns = columns.Where(x => !string.IsNullOrEmpty(x.Name) && ColumnValidRegex.IsMatch(x.Name)).ToList();
                     }
                 }
 
@@ -313,29 +314,12 @@ namespace EfCoreScaffoldMssql
 
                 if (_options.GenerateStoredProcedures)
                 {
-                    foreach (var p in spDefinitions.Where(x => x.Columns.Count > 0))
-                    {
-                        var model = new EntityViewModel
-                        {
-                            SchemaName = p.Schema,
-                            EntityName = p.ResultTypeName,
-                            Namespace = _options.Namespace,
-                            IsVirtual = true,
-                            Columns = p.Columns.Select(c => new ColumnViewModel
-                            {
-                                SchemaName = p.Schema,
-                                Name = c.Name,
-                                TypeName = c.SqlType,
-                                IsNullable = c.IsNullable
-                            }).ToList()
-                        };
+                    WriteObjectSets(spDefinitions, modelsDirectory, templateSet, fileNames);
+                }
 
-                        var setResult = templateSet(model);
-                        var setResultFileName = Path.Combine(modelsDirectory, p.ResultTypeName + ".cs");
-                        File.WriteAllText(setResultFileName, setResult);
-
-                        fileNames.Add(setResultFileName);
-                    }
+                if (_options.GenerateTableValuedFunctions)
+                {
+                    WriteObjectSets(tvfDefinitions, modelsDirectory, templateSet, fileNames);
                 }
 
                 var contextViewModel = new ContextViewModel
@@ -369,7 +353,7 @@ namespace EfCoreScaffoldMssql
         private List<StoredObjectDefinition> GetStoredObjectsDefinition(SqlConnection connection, string sql, bool isFunction)
         {
             var storedProcedureParameters = connection.ReadObjects<StoredObjectParameter>(sql);
-            var spDefinitions = (from p in storedProcedureParameters
+            var objectDefinitions = (from p in storedProcedureParameters
                 group p by new { p.Schema, p.Name }
                 into sGroup
                 select new StoredObjectDefinition
@@ -388,7 +372,34 @@ namespace EfCoreScaffoldMssql
                         SqlType = p.SqlType
                     }).OrderBy(p => p.Order).ToList()
                 }).ToList();
-            return spDefinitions;
+            return objectDefinitions;
+        }
+
+        private void WriteObjectSets(IEnumerable<StoredObjectDefinition> objectDefinitions, string modelsDirectory, Func<object, string> templateSet, List<string> fileNames)
+        {
+            foreach (var p in objectDefinitions.Where(x => x.Columns.Count > 0))
+            {
+                var model = new EntityViewModel
+                {
+                    SchemaName = p.Schema,
+                    EntityName = p.ResultTypeName,
+                    Namespace = _options.Namespace,
+                    IsVirtual = true,
+                    Columns = p.Columns.Select(c => new ColumnViewModel
+                    {
+                        SchemaName = p.Schema,
+                        Name = c.Name,
+                        TypeName = c.SqlType,
+                        IsNullable = c.IsNullable
+                    }).ToList()
+                };
+
+                var setResult = templateSet(model);
+                var setResultFileName = Path.Combine(modelsDirectory, p.ResultTypeName + ".cs");
+                File.WriteAllText(setResultFileName, setResult);
+
+                fileNames.Add(setResultFileName);
+            }
         }
     }
 }

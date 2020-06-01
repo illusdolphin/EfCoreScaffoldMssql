@@ -29,7 +29,7 @@ namespace EfCoreScaffoldMssql.Classes
         public string ParameterName { get; set; }
         public bool IsOutput { get; set; }
         public bool IsNullable { get; set; }
-        public bool IsNullableType => IsNullable && CSharpTypeDefinition != "string";
+        public bool IsNullableType => IsNullable && CSharpTypeDefinition != "string" && CSharpTypeDefinition != "object";
         public string SqlType { get; set; }
         public int Order { get; set; }
         public string CSharpTypeDefinition => SqlType.GetCSharpType();
