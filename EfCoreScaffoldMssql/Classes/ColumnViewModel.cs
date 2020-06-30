@@ -35,6 +35,7 @@ namespace EfCoreScaffoldMssql.Classes
                     case "date":
                     case "datetime":
                     case "datetime2":
+                    case "geometry":
                     case "smalldatetime":
                         return true;
                 }
