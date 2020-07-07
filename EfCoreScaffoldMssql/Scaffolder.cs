@@ -283,16 +283,20 @@ namespace EfCoreScaffoldMssql
                             inversePropertyName = "Inverse" + propertyName;
                         }
 
+                        var keyCount = originTable.InverseKeys.Count(x => x.PropertyName == inversePropertyName);
+                        var propName = keyCount == 0 ? propertyName : $"{propertyName}_{keyCount}";
+                        var inversePropName = keyCount == 0 ? inversePropertyName : $"{inversePropertyName}_{keyCount}";
+
                         var foreignKeyViewModel = foreignKey.CloneCopy<FkDefinition, ForeignKeyViewModel>();
-                        foreignKeyViewModel.PropertyName = propertyName;
-                        foreignKeyViewModel.InversePropertyName = inversePropertyName;
+                        foreignKeyViewModel.PropertyName = propName;
+                        foreignKeyViewModel.InversePropertyName = inversePropName;
                         foreignKeyViewModel.InverseEntityName = originTable.EntityName;
                         foreignKeyViewModel.IsOneToOne = isOneToOne;
                         foreignTable.ForeignKeys.Add(foreignKeyViewModel);
-
+                        
                         var inverseKeyViewModel = foreignKey.CloneCopy<FkDefinition, ForeignKeyViewModel>();
-                        inverseKeyViewModel.PropertyName = inversePropertyName;
-                        inverseKeyViewModel.InversePropertyName = propertyName;
+                        inverseKeyViewModel.PropertyName = inversePropName;
+                        inverseKeyViewModel.InversePropertyName = propName;
                         foreignKeyViewModel.InverseEntityName = foreignTable.EntityName;
                         inverseKeyViewModel.IsOneToOne = isOneToOne;
                         originTable.InverseKeys.Add(inverseKeyViewModel);
