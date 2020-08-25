@@ -1,0 +1,7 @@
+{
+  "FK_Test": {
+    "PropertyName": "Test",
+    "InversePropertyName": null
+  },
+  "FK_Test1": null
+}
