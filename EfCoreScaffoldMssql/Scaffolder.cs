@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using EfCoreScaffoldMssql.Classes;
 using EfCoreScaffoldMssql.Helpers;
 using HandlebarsDotNet;
+using Newtonsoft.Json.Linq;
 
 namespace EfCoreScaffoldMssql
 {
@@ -104,8 +105,10 @@ namespace EfCoreScaffoldMssql
         {
             const string setFileName = "set.hbs";
             const string contextFileName = "context.hbs";
+            const string foreignKeysFileName = "fks.json";
             Func<object, string> templateSet;
             Func<object, string> templateContext;
+            var fksPresetList = new List<FkPresetDefinition>();
             try
             {
                 var setTemplate = File.ReadAllText(Path.Combine(_options.TemplatesDirectory, setFileName));
@@ -126,8 +129,44 @@ namespace EfCoreScaffoldMssql
                 Console.WriteLine($"Error compiling Handlebars template {contextFileName}: {ex.Message}");
                 return;
             }
-            
+
+            if (!string.IsNullOrEmpty(_options.ForeignKeysPresetDirectory))
+            {
+                try
+                {
+                    var jsonString = Path.Combine(_options.ForeignKeysPresetDirectory, foreignKeysFileName);
+                    var foreignKeysList = JObject.Parse(File.ReadAllText(jsonString));
+
+                    foreach (var foreignKey in foreignKeysList)
+                    {
+                        if (!string.IsNullOrEmpty(foreignKey.Key))
+                        {
+                            var fkPresetDefinition = new FkPresetDefinition();
+                            fkPresetDefinition.ForeignKeyName = foreignKey.Key;
+                            if (foreignKey.Value.HasValues)
+                            {
+                                fkPresetDefinition.FkPropertyNames = foreignKey.Value.ToObject<FkPropertyNameDefinition>();
+                            }
+                            else
+                            {
+                                fkPresetDefinition.FkPropertyNames = null;
+                            }
+                            fksPresetList.Add(fkPresetDefinition);
+                        }
+                    }
+                }
+
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading ForeignKeysPreset file {foreignKeysFileName}: {ex.Message}");
+                    return;
+                }
+            }
+
             WriteLine("Templates are ready");
+
+            var fkNamesSkipList = fksPresetList.Where(x => x.FkPropertyNames == null).Select(x => x.ForeignKeyName).ToList();
+
 
             using (var connection = new SqlConnection(_options.ConnectionString))
             {
@@ -136,7 +175,7 @@ namespace EfCoreScaffoldMssql
 
                 var fkDefinitionsSource = connection.ReadObjects<FkDefinitionSource>(SchemaSql.ForeignKeysSql);
                 var fkDefinitions =
-                    (from s in fkDefinitionsSource
+                    (from s in fkDefinitionsSource.Where(x => !fkNamesSkipList.Contains(x.FkName))
                     group s by new {s.PkSchema, s.FkSchema, s.FkTable, s.PkTable, s.FkName, s.PkName, s.MatchOption, s.UpdateRule, s.DeleteRule}
                     into sGroup
                     select new FkDefinition
@@ -257,22 +296,39 @@ namespace EfCoreScaffoldMssql
                     if (originTable != null && foreignTable != null)
                     {
                         var propertyName = string.Empty;
-                        foreach (var fkColumn in foreignKey.FkColumns)
+                        var inversePropertyName = string.Empty;
+
+                        var fkPreset = fksPresetList.FirstOrDefault(x => x.ForeignKeyName == foreignKey.FkName && x.FkPropertyNames != null);
+
+                        if (fkPreset != null && fkPreset.FkPropertyNames != null)
                         {
-                            propertyName = RemoveIdRegex.Replace(fkColumn, m => m.Groups["content"].Value).TrimEnd('_');
+                            propertyName = fkPreset.FkPropertyNames.PropertyName;
+                            inversePropertyName = fkPreset.FkPropertyNames.InversePropertyName;
                         }
 
-                        if (_options.ForeignPropertyRegex != null)
+                        if (string.IsNullOrEmpty(propertyName))
                         {
-                            propertyName = Regex.Match(foreignKey.FkName, _options.ForeignPropertyRegex, RegexOptions.Singleline).Groups["PropertyName"].Value;
-                            propertyName = propertyName.Replace("_", string.Empty);
-                            if (propertyName.EndsWith("Id") || propertyName.EndsWith("ID"))
+                            foreach (var fkColumn in foreignKey.FkColumns)
                             {
-                                propertyName = propertyName.Substring(0, propertyName.Length - 2);
+                                propertyName = RemoveIdRegex.Replace(fkColumn, m => m.Groups["content"].Value).TrimEnd('_');
+                            }
+
+                            if (_options.ForeignPropertyRegex != null)
+                            {
+                                propertyName = Regex.Match(foreignKey.FkName, _options.ForeignPropertyRegex, RegexOptions.Singleline).Groups["PropertyName"].Value;
+                                propertyName = propertyName.Replace("_", string.Empty);
+                                if (propertyName.EndsWith("Id") || propertyName.EndsWith("ID"))
+                                {
+                                    propertyName = propertyName.Substring(0, propertyName.Length - 2);
+                                }
                             }
                         }
 
-                        var inversePropertyName = propertyName.ReplaceFirstOccurrance(originTable.EntityName, foreignTable.EntityName);
+                        if (string.IsNullOrEmpty(inversePropertyName))
+                        {
+                            inversePropertyName = propertyName.ReplaceFirstOccurrance(originTable.EntityName, foreignTable.EntityName);
+                        }
+
                         if (!isOneToOne)
                         {
                             inversePropertyName = StringHelper.Pluralize(inversePropertyName);
