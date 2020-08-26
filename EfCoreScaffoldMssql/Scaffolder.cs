@@ -78,7 +78,15 @@ namespace EfCoreScaffoldMssql
                     .Where(x => x.FkSchema == table.SchemaName && x.FkTable == table.EntityName)
                     .ToList();
 
-                entityViewModel.Keys = tableKeys;
+                var keyViewModels = new List<KeyColumnViewModel>();
+                foreach (var tableKey in tableKeys)
+                {
+                    var keyViewModel = tableKey.CloneCopy<KeyColumnDefinition, KeyColumnViewModel>();
+                    keyViewModel.ColumnDisplayName = PropertyHelper.GetPropertyToDisplay(keyViewModel.ColumnName);
+                    keyViewModels.Add(keyViewModel);
+                }
+
+                entityViewModel.Keys = keyViewModels;
                 entityViewModel.IsDefaultSchema = defaultSchemaName == entityViewModel.SchemaName;
 
                 AddDependencies(entityViewModel, tableColumns);
@@ -93,6 +101,7 @@ namespace EfCoreScaffoldMssql
 
                     var hasFkDefinition = tableFks.Any(x => x.FkColumns.Contains(tableColumn.Name));
                     columnViewModel.IsPartOfForeignKey = hasFkDefinition;
+                    columnViewModel.DisplayName = PropertyHelper.GetPropertyToDisplay(tableColumn.Name);
 
                     entityViewModel.Columns.Add(columnViewModel);
                 }
@@ -190,7 +199,9 @@ namespace EfCoreScaffoldMssql
                         DeleteRule = sGroup.Key.DeleteRule,
                         UpdateRule = sGroup.Key.UpdateRule,
                         PkColumns = sGroup.OrderBy(x => x.PkOrdinalPosition).Select(x => x.PkColumn).ToList(),
-                        FkColumns = sGroup.OrderBy(x => x.FkOrdinalPosition).Select(x => x.FkColumn).ToList()
+                        PkColumnDisplayNames = sGroup.OrderBy(x => x.PkOrdinalPosition).Select(x => PropertyHelper.GetPropertyToDisplay(x.PkColumn)).ToList(),
+                        FkColumns = sGroup.OrderBy(x => x.FkOrdinalPosition).Select(x => x.FkColumn).ToList(),
+                        FkColumnDisplayNames = sGroup.OrderBy(x => x.FkOrdinalPosition).Select(x => PropertyHelper.GetPropertyToDisplay(x.FkColumn)).ToList()
                     }).ToList();
 
                 WriteLine("Foreign keys information received");
@@ -324,6 +335,8 @@ namespace EfCoreScaffoldMssql
                             }
                         }
 
+                        propertyName = PropertyHelper.GetPropertyToDisplay(propertyName);
+
                         if (string.IsNullOrEmpty(inversePropertyName))
                         {
                             inversePropertyName = propertyName.ReplaceFirstOccurrance(originTable.EntityName, foreignTable.EntityName);
@@ -450,7 +463,8 @@ namespace EfCoreScaffoldMssql
                         SchemaName = p.Schema,
                         Name = c.Name,
                         TypeName = c.SqlType,
-                        IsNullable = c.IsNullable
+                        IsNullable = c.IsNullable,
+                        DisplayName = PropertyHelper.GetPropertyToDisplay(c.Name)
                     }).ToList()
                 };
 
