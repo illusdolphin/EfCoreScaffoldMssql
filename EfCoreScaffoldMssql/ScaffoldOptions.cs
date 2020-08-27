@@ -47,5 +47,7 @@ namespace EfCoreScaffoldMssql
 
         public bool CleanUp { get; set; }
         public string ForeignKeysPresetDirectory { get; set; }
+        public string ExcludeTableColumnsDirectory { get; set; }
+        public string ExcludeViewColumnsDirectory { get; set; }
     }
 }

@@ -48,6 +48,7 @@ namespace EfCoreScaffoldMssql
             List<KeyColumnDefinition> keyColumns,
             List<FkDefinition> fkDefinitions,
             List<string> ignoreObjects,
+            List<ExcludeObjectColumnsModel> excludeObjectsColumns,
             string defaultSchemaName)
         {
             keyColumns = keyColumns ?? new List<KeyColumnDefinition>();
@@ -77,6 +78,16 @@ namespace EfCoreScaffoldMssql
                 var tableFks = fkDefinitions
                     .Where(x => x.FkSchema == table.SchemaName && x.FkTable == table.EntityName)
                     .ToList();
+
+
+                if (excludeObjectsColumns != null)
+                {
+                    var excludeObjectColumns = excludeObjectsColumns.Find(x => x.ObjectName == table.EntityName);
+                    if (excludeObjectColumns != null)
+                    {
+                        tableColumns.RemoveAll(x => excludeObjectColumns.ColumnNames.Contains(x.Name));
+                    }
+                }
 
                 var keyViewModels = new List<KeyColumnViewModel>();
                 foreach (var tableKey in tableKeys)
@@ -115,9 +126,14 @@ namespace EfCoreScaffoldMssql
             const string setFileName = "set.hbs";
             const string contextFileName = "context.hbs";
             const string foreignKeysFileName = "fks.json";
+            const string ignoreTableColumnsFileName = "ignoreTableColumns.json";
+            const string ignoreViewColumnsFileName = "ignoreViewColumns.json";
             Func<object, string> templateSet;
             Func<object, string> templateContext;
             var fksPresetList = new List<FkPresetDefinition>();
+            var excludeTableColumnsList = new List<ExcludeObjectColumnsModel>();
+            var excludeViewColumnsList = new List<ExcludeObjectColumnsModel>();
+
             try
             {
                 var setTemplate = File.ReadAllText(Path.Combine(_options.TemplatesDirectory, setFileName));
@@ -168,6 +184,32 @@ namespace EfCoreScaffoldMssql
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error loading ForeignKeysPreset file {foreignKeysFileName}: {ex.Message}");
+                    return;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(_options.ExcludeTableColumnsDirectory))
+            {
+                try
+                {
+                    excludeTableColumnsList = GetExludeObjectsColumnsList(_options.ExcludeTableColumnsDirectory, ignoreTableColumnsFileName);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading IgnoreColumns file {ignoreTableColumnsFileName}: {ex.Message}");
+                    return;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(_options.ExcludeViewColumnsDirectory))
+            {
+                try
+                {
+                    excludeViewColumnsList = GetExludeObjectsColumnsList(_options.ExcludeViewColumnsDirectory, ignoreViewColumnsFileName);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading IgnoreColumns file {ignoreViewColumnsFileName}: {ex.Message}");
                     return;
                 }
             }
@@ -257,9 +299,9 @@ namespace EfCoreScaffoldMssql
 
                 var entityViewModels = new List<EntityViewModel>();
 
-                ScaffoldEntities(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, _options.IgnoreTables, defaultSchemaName);
+                ScaffoldEntities(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, _options.IgnoreTables,excludeTableColumnsList, defaultSchemaName);
 
-                ScaffoldEntities(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews, defaultSchemaName);
+                ScaffoldEntities(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews,excludeViewColumnsList, defaultSchemaName);
 
                 var pKeys =
                     (from pk in keyColumns
@@ -474,6 +516,29 @@ namespace EfCoreScaffoldMssql
 
                 fileNames.Add(setResultFileName);
             }
+        }
+
+        private List<ExcludeObjectColumnsModel> GetExludeObjectsColumnsList(string path, string fileName)
+        {
+            var excludeObjectsColumnsList = new List<ExcludeObjectColumnsModel>();
+
+            var excludeObjectsColumnsJsonString = Path.Combine(path, fileName);
+            var excludeObjectsColumns = JObject.Parse(File.ReadAllText(excludeObjectsColumnsJsonString));
+
+            foreach (var excludeObjectColumns in excludeObjectsColumns)
+            {
+                if(!string.IsNullOrEmpty(excludeObjectColumns.Key) && !string.IsNullOrEmpty(excludeObjectColumns.Value.ToString()))
+                {
+                    var columnNamesList = excludeObjectColumns.Value.ToString().Split(',').ToList();
+                    columnNamesList.RemoveAll(string.IsNullOrEmpty);
+                    excludeObjectsColumnsList.Add(new ExcludeObjectColumnsModel()
+                    {
+                        ObjectName = excludeObjectColumns.Key,
+                        ColumnNames = columnNamesList
+                    });
+                }
+            }
+            return excludeObjectsColumnsList;
         }
     }
 }

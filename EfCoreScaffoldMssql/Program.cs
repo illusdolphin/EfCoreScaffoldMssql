@@ -42,6 +42,8 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine("-ETN,--extended-property-type-name <Name> - Extended property name to read model property type from, default is 'TypeName'. If column does not have extended property then model property type is inferred from the database column type.");
                     Console.WriteLine("-V,--verbose <Schema> - Show messages during execution");
                     Console.WriteLine("-FKPD,--foreign-keys-preset-directory <Path> - Path with foreign keys preset file fks.json");
+                    Console.WriteLine("-ITC,--ignore-table-columns-directory <Path> - Path with ignore table columns file ignoreTableColumns.json");
+                    Console.WriteLine("-IVC,--ignore-view-columns-directory <Path> - Path with ignore view columns file ignoreViewColumns.json");
 
                     return;
                 }
@@ -66,9 +68,17 @@ namespace EfCoreScaffoldMssql
                               ?? CommandLineHelper.GetParameterByName(args, "-IT")
                               ?? string.Empty;
 
+                var excludeTableColumnsDirectory = CommandLineHelper.GetParameterByName(args, "--ignore-table-columns-directory")
+                                        ?? CommandLineHelper.GetParameterByName(args, "-ITC")
+                                        ?? string.Empty;
+
                 var excludeViews = CommandLineHelper.GetParameterByName(args, "--ignore-views")
                                     ?? CommandLineHelper.GetParameterByName(args, "-IV")
                                     ?? string.Empty;
+
+                var excludeViewColumnsDirectory = CommandLineHelper.GetParameterByName(args, "--ignore-view-columns-directory")
+                                         ?? CommandLineHelper.GetParameterByName(args, "-IVC")
+                                         ?? string.Empty;
 
                 var cleanUp = (CommandLineHelper.GetParameterByName(args, "--clean-up")
                                     ?? CommandLineHelper.GetParameterByName(args, "-CU")) != null;
@@ -147,7 +157,9 @@ namespace EfCoreScaffoldMssql
                     IsVerbose = isVerbose,
                     ExtendedPropertyTypeName = extendedPropertyTypeName,
                     CleanUp = cleanUp,
-                    ForeignKeysPresetDirectory = foreignKeysPresetDirectory
+                    ForeignKeysPresetDirectory = foreignKeysPresetDirectory,
+                    ExcludeTableColumnsDirectory = excludeTableColumnsDirectory,
+                    ExcludeViewColumnsDirectory = excludeViewColumnsDirectory
                 };
                 var scaffolder = new Scaffolder(options);
                 scaffolder.Generate();

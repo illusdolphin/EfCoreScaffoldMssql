@@ -1,0 +1,5 @@
+{
+  "TableName1": "ColumnName1,ColumnName2,ColumnName3",
+  "TableName2": "ColumnName1",
+  "TableName3": "ColumnName1,ColumnName2"
+}
