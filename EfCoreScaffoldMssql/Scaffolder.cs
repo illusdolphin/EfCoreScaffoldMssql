@@ -48,7 +48,7 @@ namespace EfCoreScaffoldMssql
             List<KeyColumnDefinition> keyColumns,
             List<FkDefinition> fkDefinitions,
             List<string> ignoreObjects,
-            List<ExcludeObjectColumnsModel> excludeObjectsColumns,
+            List<ObjectColumnsSettingModel> objectsColumnsSettings,
             string defaultSchemaName)
         {
             keyColumns = keyColumns ?? new List<KeyColumnDefinition>();
@@ -80,12 +80,13 @@ namespace EfCoreScaffoldMssql
                     .ToList();
 
 
-                if (excludeObjectsColumns != null)
+                if (objectsColumnsSettings != null)
                 {
-                    var excludeObjectColumns = excludeObjectsColumns.Find(x => x.ObjectName == table.EntityName);
-                    if (excludeObjectColumns != null)
+                    var objectColumnsSetting = objectsColumnsSettings.Find(x => x.ObjectName == table.EntityName);
+                    if (objectColumnsSetting != null)
                     {
-                        tableColumns.RemoveAll(x => excludeObjectColumns.ColumnNames.Contains(x.Name));
+                        var columnsSetting = objectColumnsSetting.ColumnsList.Where(x => x.NewName == null).Select(x => x.Name).ToList();
+                        tableColumns.RemoveAll(x => columnsSetting.Contains(x.Name));
                     }
                 }
 
@@ -93,7 +94,7 @@ namespace EfCoreScaffoldMssql
                 foreach (var tableKey in tableKeys)
                 {
                     var keyViewModel = tableKey.CloneCopy<KeyColumnDefinition, KeyColumnViewModel>();
-                    keyViewModel.ColumnDisplayName = PropertyHelper.GetPropertyToDisplay(keyViewModel.ColumnName);
+                    keyViewModel.ColumnDisplayName = PropertyHelper.GetColumnNameToDisplay(keyViewModel.ColumnName, table.EntityName, objectsColumnsSettings);
                     keyViewModels.Add(keyViewModel);
                 }
 
@@ -112,7 +113,8 @@ namespace EfCoreScaffoldMssql
 
                     var hasFkDefinition = tableFks.Any(x => x.FkColumns.Contains(tableColumn.Name));
                     columnViewModel.IsPartOfForeignKey = hasFkDefinition;
-                    columnViewModel.DisplayName = PropertyHelper.GetPropertyToDisplay(tableColumn.Name);
+
+                    columnViewModel.DisplayName = PropertyHelper.GetColumnNameToDisplay(tableColumn.Name, table.EntityName, objectsColumnsSettings);
 
                     entityViewModel.Columns.Add(columnViewModel);
                 }
@@ -125,14 +127,12 @@ namespace EfCoreScaffoldMssql
         {
             const string setFileName = "set.hbs";
             const string contextFileName = "context.hbs";
-            const string foreignKeysFileName = "fks.json";
-            const string ignoreTableColumnsFileName = "ignoreTableColumns.json";
-            const string ignoreViewColumnsFileName = "ignoreViewColumns.json";
+            const string customSettingsFileName = "customSettings.json";
             Func<object, string> templateSet;
             Func<object, string> templateContext;
             var fksPresetList = new List<FkPresetDefinition>();
-            var excludeTableColumnsList = new List<ExcludeObjectColumnsModel>();
-            var excludeViewColumnsList = new List<ExcludeObjectColumnsModel>();
+            var tablesColumnsSettingsList = new List<ObjectColumnsSettingModel>();
+            var viewsColumnsSettingsList = new List<ObjectColumnsSettingModel>();
 
             try
             {
@@ -155,61 +155,23 @@ namespace EfCoreScaffoldMssql
                 return;
             }
 
-            if (!string.IsNullOrEmpty(_options.ForeignKeysPresetDirectory))
+            if (!string.IsNullOrEmpty(_options.CustomSettingsDirectory))
             {
                 try
                 {
-                    var jsonString = Path.Combine(_options.ForeignKeysPresetDirectory, foreignKeysFileName);
-                    var foreignKeysList = JObject.Parse(File.ReadAllText(jsonString));
+                    var customSettingsJsonString = Path.Combine(_options.CustomSettingsDirectory, customSettingsFileName);
+                    var customSettingsJsonObject = JObject.Parse(File.ReadAllText(customSettingsJsonString));
+                    var foreignKeys = (JObject)customSettingsJsonObject.GetValue("ForeignKeys");
+                    var tablesColumnsSettings = (JObject)customSettingsJsonObject.GetValue("TablesColumns");
+                    var viewsColumnsSettings = (JObject)customSettingsJsonObject.GetValue("ViewsColumns");
 
-                    foreach (var foreignKey in foreignKeysList)
-                    {
-                        if (!string.IsNullOrEmpty(foreignKey.Key))
-                        {
-                            var fkPresetDefinition = new FkPresetDefinition();
-                            fkPresetDefinition.ForeignKeyName = foreignKey.Key;
-                            if (foreignKey.Value.HasValues)
-                            {
-                                fkPresetDefinition.FkPropertyNames = foreignKey.Value.ToObject<FkPropertyNameDefinition>();
-                            }
-                            else
-                            {
-                                fkPresetDefinition.FkPropertyNames = null;
-                            }
-                            fksPresetList.Add(fkPresetDefinition);
-                        }
-                    }
-                }
-
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error loading ForeignKeysPreset file {foreignKeysFileName}: {ex.Message}");
-                    return;
-                }
-            }
-
-            if (!string.IsNullOrEmpty(_options.ExcludeTableColumnsDirectory))
-            {
-                try
-                {
-                    excludeTableColumnsList = GetExludeObjectsColumnsList(_options.ExcludeTableColumnsDirectory, ignoreTableColumnsFileName);
+                    fksPresetList = GetForeignKeysPresetList(foreignKeys);
+                    tablesColumnsSettingsList = GetObjectsColumnsSettingsList(tablesColumnsSettings);
+                    viewsColumnsSettingsList = GetObjectsColumnsSettingsList(viewsColumnsSettings);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error loading IgnoreColumns file {ignoreTableColumnsFileName}: {ex.Message}");
-                    return;
-                }
-            }
-
-            if (!string.IsNullOrEmpty(_options.ExcludeViewColumnsDirectory))
-            {
-                try
-                {
-                    excludeViewColumnsList = GetExludeObjectsColumnsList(_options.ExcludeViewColumnsDirectory, ignoreViewColumnsFileName);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error loading IgnoreColumns file {ignoreViewColumnsFileName}: {ex.Message}");
+                    Console.WriteLine($"Error loading CustomSettings file {customSettingsFileName}: {ex.Message}");
                     return;
                 }
             }
@@ -241,9 +203,9 @@ namespace EfCoreScaffoldMssql
                         DeleteRule = sGroup.Key.DeleteRule,
                         UpdateRule = sGroup.Key.UpdateRule,
                         PkColumns = sGroup.OrderBy(x => x.PkOrdinalPosition).Select(x => x.PkColumn).ToList(),
-                        PkColumnDisplayNames = sGroup.OrderBy(x => x.PkOrdinalPosition).Select(x => PropertyHelper.GetPropertyToDisplay(x.PkColumn)).ToList(),
+                        PkColumnDisplayNames = sGroup.OrderBy(x => x.PkOrdinalPosition).Select(x => PropertyHelper.GetColumnNameToDisplay(x.PkColumn, sGroup.Key.PkTable, tablesColumnsSettingsList)).ToList(),
                         FkColumns = sGroup.OrderBy(x => x.FkOrdinalPosition).Select(x => x.FkColumn).ToList(),
-                        FkColumnDisplayNames = sGroup.OrderBy(x => x.FkOrdinalPosition).Select(x => PropertyHelper.GetPropertyToDisplay(x.FkColumn)).ToList()
+                        FkColumnDisplayNames = sGroup.OrderBy(x => x.FkOrdinalPosition).Select(x => PropertyHelper.GetColumnNameToDisplay(x.FkColumn, sGroup.Key.FkTable, tablesColumnsSettingsList)).ToList()
                     }).ToList();
 
                 WriteLine("Foreign keys information received");
@@ -299,9 +261,9 @@ namespace EfCoreScaffoldMssql
 
                 var entityViewModels = new List<EntityViewModel>();
 
-                ScaffoldEntities(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, _options.IgnoreTables,excludeTableColumnsList, defaultSchemaName);
+                ScaffoldEntities(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, _options.IgnoreTables, tablesColumnsSettingsList, defaultSchemaName);
 
-                ScaffoldEntities(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews,excludeViewColumnsList, defaultSchemaName);
+                ScaffoldEntities(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews, viewsColumnsSettingsList, defaultSchemaName);
 
                 var pKeys =
                     (from pk in keyColumns
@@ -377,7 +339,7 @@ namespace EfCoreScaffoldMssql
                             }
                         }
 
-                        propertyName = PropertyHelper.GetPropertyToDisplay(propertyName);
+                        propertyName = PropertyHelper.GetColumnNameToDisplay(propertyName, originTable.EntityName, tablesColumnsSettingsList);
 
                         if (string.IsNullOrEmpty(inversePropertyName))
                         {
@@ -429,12 +391,12 @@ namespace EfCoreScaffoldMssql
 
                 if (_options.GenerateStoredProcedures)
                 {
-                    WriteObjectSets(spDefinitions, modelsDirectory, templateSet, fileNames);
+                    WriteObjectSets(spDefinitions, modelsDirectory, templateSet, fileNames, tablesColumnsSettingsList);
                 }
 
                 if (_options.GenerateTableValuedFunctions)
                 {
-                    WriteObjectSets(tvfDefinitions, modelsDirectory, templateSet, fileNames);
+                    WriteObjectSets(tvfDefinitions, modelsDirectory, templateSet, fileNames, tablesColumnsSettingsList);
                 }
 
                 var contextViewModel = new ContextViewModel
@@ -490,7 +452,7 @@ namespace EfCoreScaffoldMssql
             return objectDefinitions;
         }
 
-        private void WriteObjectSets(IEnumerable<StoredObjectDefinition> objectDefinitions, string modelsDirectory, Func<object, string> templateSet, List<string> fileNames)
+        private void WriteObjectSets(IEnumerable<StoredObjectDefinition> objectDefinitions, string modelsDirectory, Func<object, string> templateSet, List<string> fileNames, List<ObjectColumnsSettingModel> objectsColumnsSettings = null)
         {
             foreach (var p in objectDefinitions.Where(x => x.Columns.Count > 0))
             {
@@ -506,7 +468,7 @@ namespace EfCoreScaffoldMssql
                         Name = c.Name,
                         TypeName = c.SqlType,
                         IsNullable = c.IsNullable,
-                        DisplayName = PropertyHelper.GetPropertyToDisplay(c.Name)
+                        DisplayName = PropertyHelper.GetColumnNameToDisplay(c.Name, p.ResultTypeName, objectsColumnsSettings)
                     }).ToList()
                 };
 
@@ -518,27 +480,62 @@ namespace EfCoreScaffoldMssql
             }
         }
 
-        private List<ExcludeObjectColumnsModel> GetExludeObjectsColumnsList(string path, string fileName)
+        private List<ObjectColumnsSettingModel> GetObjectsColumnsSettingsList(JObject objectsColumns)
         {
-            var excludeObjectsColumnsList = new List<ExcludeObjectColumnsModel>();
+            var objectsColumnsSettingsList = new List<ObjectColumnsSettingModel>();
 
-            var excludeObjectsColumnsJsonString = Path.Combine(path, fileName);
-            var excludeObjectsColumns = JObject.Parse(File.ReadAllText(excludeObjectsColumnsJsonString));
-
-            foreach (var excludeObjectColumns in excludeObjectsColumns)
-            {
-                if(!string.IsNullOrEmpty(excludeObjectColumns.Key) && !string.IsNullOrEmpty(excludeObjectColumns.Value.ToString()))
+            if (objectsColumns != null)
+            { 
+                foreach (var objectColumns in objectsColumns)
                 {
-                    var columnNamesList = excludeObjectColumns.Value.ToString().Split(',').ToList();
-                    columnNamesList.RemoveAll(string.IsNullOrEmpty);
-                    excludeObjectsColumnsList.Add(new ExcludeObjectColumnsModel()
+                    if (!string.IsNullOrEmpty(objectColumns.Key) && objectColumns.Value.HasValues)
                     {
-                        ObjectName = excludeObjectColumns.Key,
-                        ColumnNames = columnNamesList
-                    });
+                        var objectColumnsSetting = new ObjectColumnsSettingModel()
+                        {
+                            ObjectName = objectColumns.Key,
+                            ColumnsList = new List<ColumnSettingModel>()
+                        };
+
+                        var columns = objectColumns.Value;
+
+                        foreach (var column in columns)
+                        {
+                            var columnSetting = column.ToObject<ColumnSettingModel>();
+                            objectColumnsSetting.ColumnsList.Add(columnSetting);
+                        }
+
+                        objectsColumnsSettingsList.Add(objectColumnsSetting);
+                    }
                 }
             }
-            return excludeObjectsColumnsList;
+            return objectsColumnsSettingsList;
+        }
+
+        private List<FkPresetDefinition> GetForeignKeysPresetList(JObject foreignKeys)
+        {
+            var fksPresetList = new List<FkPresetDefinition>();
+
+            if (foreignKeys != null)
+            {
+                foreach (var foreignKey in foreignKeys)
+                {
+                    if (!string.IsNullOrEmpty(foreignKey.Key))
+                    {
+                        var fkPresetDefinition = new FkPresetDefinition();
+                        fkPresetDefinition.ForeignKeyName = foreignKey.Key;
+                        if (foreignKey.Value.HasValues)
+                        {
+                            fkPresetDefinition.FkPropertyNames = foreignKey.Value.ToObject<FkPropertyNameDefinition>();
+                        }
+                        else
+                        {
+                            fkPresetDefinition.FkPropertyNames = null;
+                        }
+                        fksPresetList.Add(fkPresetDefinition);
+                    }
+                }
+            }
+            return fksPresetList;
         }
     }
 }

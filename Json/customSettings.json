@@ -1,0 +1,27 @@
+{
+  "ForeignKeys": {
+    "FK_Name1": {
+      "PropertyName": "Name1",
+      "InversePropertyName": "Name2"
+    },
+    "FK_Name2": null,
+    "FK_Name3": {
+      "PropertyName": "Name3",
+      "InversePropertyName": null
+    }
+  },
+  "TablesColumns": {
+    "TableName1": [
+      { "Name": "ColumnName1" },
+      { "Name": "ColumnName2" },
+      { "Name": "ColumnName3" }
+    ],
+    "TableName3": [
+      { "Name": "ColumnName1" },
+      { "Name": "ColumnName2", "NewName": "NewColumnName2" },
+      { "Name": "ColumnName3", "NewName": "NewColumnName3" },
+      { "Name": "ColumnName4" },
+      { "Name": "ColumnName4" }
+    ]
+  }
+}
