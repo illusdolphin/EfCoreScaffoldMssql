@@ -14,7 +14,7 @@ namespace EfCoreScaffoldMssql.Helpers
 {
     public static class HBSHelper
     {
-        public static void IfColumnsContainsAll(TextWriter output, HelperOptions options, dynamic context, params object[] arguments)
+        public static void TableContainsAllColumns(TextWriter output, HelperOptions options, dynamic context, params object[] arguments)
         {
             if (arguments.Length < 2)
             {

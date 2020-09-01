@@ -134,7 +134,7 @@ namespace EfCoreScaffoldMssql
             var tablesColumnsSettingsList = new List<ObjectColumnsSettingModel>();
             var viewsColumnsSettingsList = new List<ObjectColumnsSettingModel>();
             var fkPropertyDisplayNamesSettingsList = new List<FkPropertyDisplayNameDefinition>();
-            Handlebars.RegisterHelper("IfColumnsContainsAll", HBSHelper.IfColumnsContainsAll);
+            Handlebars.RegisterHelper("TableContainsAllColumns", HBSHelper.TableContainsAllColumns);
 
             try
             {
