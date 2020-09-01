@@ -5,6 +5,7 @@ namespace EfCoreScaffoldMssql.Classes
 {
     public class ColumnViewModel: ColumnDefinition
     {
+        public string DisplayName { get; set; }
         public bool IsString => CSharpType == "string";
         public bool HasLengthLimit => MaxLength != -1 && !(TypeName == "ntext" || TypeName == "text");
         public int MaxStringLength => TypeName == "nvarchar" || TypeName == "nchar" ? MaxLength / 2 : MaxLength;
@@ -26,6 +27,13 @@ namespace EfCoreScaffoldMssql.Classes
             || IsIdentity
 			|| IsComputed;
 
+        public bool NeedColumnDefinition 
+        { 
+            get 
+            {
+                return !string.Equals(Name, DisplayName);
+            }
+        }
         public bool NeedTypeDefinition
         {
             get

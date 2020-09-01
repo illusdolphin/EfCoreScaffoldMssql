@@ -46,6 +46,6 @@ namespace EfCoreScaffoldMssql
         public string ExtendedPropertyTypeName { get; set; }
 
         public bool CleanUp { get; set; }
-        public string ForeignKeysPresetDirectory { get; set; }
+        public string CustomSettingsJsonPath { get; set; }
     }
 }

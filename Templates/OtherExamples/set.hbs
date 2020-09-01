@@ -1,0 +1,63 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+{{#each Dependencies}}
+using {{Name}};
+{{/each}}
+
+namespace {{Namespace}}
+{
+    {{#unless IsVirtual}}[Table("{{EntityName}}"{{#unless IsDefaultSchema}}, Schema = "{{SchemaName}}"{{/unless}})]{{/unless}}
+    public partial class {{EntityName}}
+    {
+        {{#if HasInverseSets}}
+        public {{EntityName}}()
+        {
+            {{#each InverseKeys}}
+            {{#unless IsOneToOne}}
+            {{PropertyName}} = new HashSet<{{FkTable}}>();
+            {{/unless}}
+            {{/each}}
+        }
+        {{/if}}
+
+		{{#each Columns}}
+	    {{#if IsKey}}
+		{{#unless @root.HasDefaultSimpleKey}}
+		[Key]
+		{{/unless}}
+		{{/if}}
+        {{#if IsRequiredString }}
+        [Required]
+        {{/if}}
+        {{#if IsString }}
+        {{#if HasLengthLimit }}
+        [StringLength({{MaxStringLength}})]
+        {{/if}}
+        {{/if}}
+        {{#if NeedColumnDefinition}}
+        [Column("{{Name}}")]
+        {{/if}}
+        {{#if NeedTypeDefinition }}
+        [Column(TypeName = "{{TypeName}}")]
+        {{/if}}
+		public {{CSharpType}} {{DisplayName}} { get; set; }
+		
+		{{/each}}
+        {{#each ForeignKeys}}
+        [ForeignKey("{{#each FkColumnDisplayNames}}{{.}}{{#unless @last}},{{/unless}}{{/each}}")]
+        [InverseProperty("{{InversePropertyName}}")]
+        public {{PkTable}} {{PropertyName}} { get; set; }
+        {{/each}}
+        {{#each InverseKeys}}
+        {{#if IsOneToOne }}
+        [InverseProperty("{{InversePropertyName}}")]
+        public {{FkTable}} {{PropertyName}} { get; set; }
+        {{else}}
+        [InverseProperty("{{InversePropertyName}}")]
+        public ICollection<{{FkTable}}> {{PropertyName}} { get; set; }
+        {{/if}}     
+        {{/each}}
+    }
+}

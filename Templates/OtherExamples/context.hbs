@@ -1,0 +1,108 @@
+using System;
+using System.Data;
+using System.Linq;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+
+namespace {{Namespace}}
+{
+    public partial class {{ContextName}} : DbContext
+    {
+        {{#each Entities}}
+        public virtual DbSet<{{EntityName}}> {{EntityPluralizedName}} { get; set; }
+        {{/each}}
+
+        public {{ContextName}}(DbContextOptions<{{ContextName}}> options) : base(options)
+        {
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            {{#each Entities}}
+            modelBuilder.Entity<{{EntityName}}>(entity =>
+            {
+                {{#if HasKey}}
+                {{#unless HasSimpleKey}}
+                entity.HasKey(e => new { {{#each Keys}}e.{{ColumnDisplayName}}{{#unless @last}}, {{/unless}}{{/each}} });
+                {{/unless}}
+                {{/if}}
+                {{#unless HasKey}}
+                entity.HasKey(e => new { {{#each Columns}}{{#unless IsNullable}}e.{{DisplayName}}{{#unless @last}}, {{/unless}}{{/unless}}{{/each}} });
+                {{/unless}}
+                {{#each ColumnsEfPropertyOrder}}
+                {{#if HasModifiers}}
+                entity.Property(e => e.{{DisplayName}})
+                {{~ #if IsIdentity}}.ValueGeneratedOnAdd(){{/if}}
+                {{~ #if IsValueGeneratedNever}}.ValueGeneratedNever(){{/if}}
+                {{~ #if IsNonUnicodeString}}.IsUnicode(false){{/if}}
+                {{~ #if HasDefaultDefinition}}.HasDefaultValueSql("{{DefaultDefinition}}"){{/if}}
+                {{~ #if HasComputedColumnSql}}.HasComputedColumnSql("{{ComputedColumnSql}}"){{/if}};
+                {{/if}}
+                {{/each}}
+		        {{#each Columns}}
+                {{#if NeedColumnDefinition}}
+                entity.Property(e => e.{{DisplayName}}).HasColumnName("{{Name}}");
+                {{/if}}
+                {{/each}}
+                {{#each ForeignKeys}}
+                {{#if IsOneToOne}}
+                entity.HasOne(d => d.{{PropertyName}})
+                    .WithOne(p => p.{{InversePropertyName}})
+                {{#if IsCompositeKey}}
+                    .HasForeignKey<{{InverseEntityName}}>(d => new { {{#each FkColumnDisplayNames}}d.{{.}}{{#unless @last}}, {{/unless}}{{/each}} })
+                {{else}}
+                    .HasForeignKey<{{InverseEntityName}}>(d => {{#each FkColumnDisplayNames}}d.{{.}}{{/each}})
+                {{/if}}
+                {{else}}
+                entity.HasOne(d => d.{{PropertyName}})
+                    .WithMany(p => p.{{InversePropertyName}})
+                {{#if IsCompositeKey}}
+                    .HasForeignKey(d => new { {{#each FkColumnDisplayNames}}d.{{.}}{{#unless @last}}, {{/unless}}{{/each}} })
+                {{else}}
+                    .HasForeignKey(d => {{#each FkColumnDisplayNames}}d.{{.}}{{/each}})
+                {{/if}}
+                {{/if}}
+                    .HasConstraintName("{{FkName}}");
+                {{/each}}
+            });
+            {{/each}}
+
+            {{#each StoredProcedures}}{{#if Columns}}
+            modelBuilder.Query<{{ResultTypeName}}>();
+            {{/if}}{{/each}}
+	        {{#each TableValuedFunctions}}{{#if Columns}}
+            modelBuilder.Query<{{ResultTypeName}}>();
+            {{/if}}{{/each}}     
+        }
+
+        //https://stackoverflow.com/questions/59624695/entity-framework-core-3-1-return-value-int-from-stored-procedure
+        {{#each StoredProcedures}}
+        public {{#unless Columns}}int{{/unless}}{{#if Columns}}IQueryable<{{ResultTypeName}}>{{/if}} {{Name}}({{#each Parameters}}{{#if IsOutput}}out {{/if}}{{CSharpTypeDefinition}}{{#if IsNullableType}}?{{/if}} {{CSharpName}}{{#unless @last}}, {{/unless}}{{/each}})
+        {
+            {{#each Parameters}}
+            var {{CSharpName}}Parameter = new SqlParameter("{{ParameterNameWithoutAt}}", {{#unless @IsOutput}}{{CSharpName}}{{/unless}}{{#if IsOutput}}"{{SqlType}}"{{/if}}){{#if IsOutput}}{Direction = ParameterDirection.Output}{{/if}};
+            {{/each}}
+            {{#each Parameters}}
+            {{#if IsOutput}}
+            {{CSharpName}} = ({{CSharpTypeDefinition}}{{#if IsNullableType}}?{{/if}}){{CSharpName}}Parameter.Value;{{/if}}{{/each}}
+            {{/if}}
+            {{/unless}}
+            {{#unless Columns}}
+            return Database.ExecuteSqlRaw("EXEC {{Schema}}.{{Name}} {{#each Parameters}}{{ParameterName}}{{#if IsOutput}} OUTPUT{{/if}}{{#unless @last}}, {{/unless}}{{/each}}"{{#each Parameters}}, {{CSharpName}}Parameter{{/each}});
+            {{/unless}}
+            {{#if Columns}}
+            return Set<{{ResultTypeName}}>().FromSqlRaw("EXEC {{Schema}}.{{Name}} {{#each Parameters}}{{ParameterName}}{{#if IsOutput}} OUTPUT{{/if}}{{#unless @last}}, {{/unless}}{{/each}}"{{#each Parameters}}, {{CSharpName}}Parameter{{/each}});
+            {{/if}}
+        }
+        {{/each}}
+        
+        //https://stackoverflow.com/questions/59624695/entity-framework-core-3-1-return-value-int-from-stored-procedure
+        {{#each TableValuedFunctions}}
+        public IQueryable<{{ResultTypeName}}> {{Name}}({{#each Parameters}}{{CSharpTypeDefinition}}{{#if IsNullableType}}?{{/if}} {{CSharpName}}{{#unless @last}}, {{/unless}}{{/each}})
+        {
+            return Set<{{ResultTypeName}}>().FromSqlInterpolated($"SELECT {{#each Columns}}[{{Name}}]{{#unless @last}}, {{/unless}}{{/each}} FROM {{Schema}}.{{Name}}({{#each Parameters}}{ {{CSharpName}} }{{#unless @last}}, {{/unless}}{{/each}})");
+        }
+
+        {{/each}}
+    }
+}

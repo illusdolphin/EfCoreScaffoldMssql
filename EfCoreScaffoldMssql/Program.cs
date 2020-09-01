@@ -41,7 +41,7 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine("-TD,--templates-directory <Path> - Path with template fies set.hbs and context.hbs");
                     Console.WriteLine("-ETN,--extended-property-type-name <Name> - Extended property name to read model property type from, default is 'TypeName'. If column does not have extended property then model property type is inferred from the database column type.");
                     Console.WriteLine("-V,--verbose <Schema> - Show messages during execution");
-                    Console.WriteLine("-FKPD,--foreign-keys-preset-directory <Path> - Path with foreign keys preset file fks.json");
+                    Console.WriteLine("-CSD,--custom-settings-json <Path> - Path to custom settings json file");
 
                     return;
                 }
@@ -106,9 +106,9 @@ namespace EfCoreScaffoldMssql
                 var isVerbose = CommandLineHelper.HasParameterByName(args, "--verbose")
                                 || CommandLineHelper.HasParameterByName(args, "-V");
 
-                var foreignKeysPresetDirectory = CommandLineHelper.GetParameterByName(args, "--foreign-keys-preset-directory")
-                                       ?? CommandLineHelper.GetParameterByName(args, "-FKPD")
-                                       ?? string.Empty;
+                var customSettingsJsonPath = CommandLineHelper.GetParameterByName(args, "--custom-settings-json")
+                                    ?? CommandLineHelper.GetParameterByName(args, "-CSD")
+                                    ?? string.Empty;
 
                 var includeSchemas = schemas.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToLower())
@@ -147,7 +147,7 @@ namespace EfCoreScaffoldMssql
                     IsVerbose = isVerbose,
                     ExtendedPropertyTypeName = extendedPropertyTypeName,
                     CleanUp = cleanUp,
-                    ForeignKeysPresetDirectory = foreignKeysPresetDirectory
+                    CustomSettingsJsonPath = customSettingsJsonPath
                 };
                 var scaffolder = new Scaffolder(options);
                 scaffolder.Generate();

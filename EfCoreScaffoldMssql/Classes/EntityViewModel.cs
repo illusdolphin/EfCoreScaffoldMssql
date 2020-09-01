@@ -8,7 +8,7 @@ namespace EfCoreScaffoldMssql.Classes
         public EntityViewModel()
         {
             Columns = new List<ColumnViewModel>();
-            Keys = new List<KeyColumnDefinition>();
+            Keys = new List<KeyColumnViewModel>();
             ForeignKeys = new List<ForeignKeyViewModel>();
             InverseKeys = new List<ForeignKeyViewModel>();
             Dependencies = new List<Dependency>();
@@ -45,7 +45,7 @@ namespace EfCoreScaffoldMssql.Classes
 
         public bool HasInverseSets => InverseKeys.Any();
 
-        public List<KeyColumnDefinition> Keys { get; set; }
+        public List<KeyColumnViewModel> Keys { get; set; }
 
         public List<ForeignKeyViewModel> ForeignKeys { get; set; }
 

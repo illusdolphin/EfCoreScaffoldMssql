@@ -5,7 +5,7 @@ namespace EfCoreScaffoldMssql.Helpers
 {
     public static class StringHelper
     {
-        public static string ReplaceFirstOccurrance(this string original, string oldValue, string newValue)
+        public static string ReplaceFirstOccurrance(this string original, string oldValue, string newValue, bool isPresetValue = false)
         {
             if (String.IsNullOrEmpty(original))
                 return String.Empty;
@@ -13,6 +13,8 @@ namespace EfCoreScaffoldMssql.Helpers
                 return original;
             if (String.IsNullOrEmpty(newValue))
                 newValue = String.Empty;
+            if (isPresetValue)
+                return string.Format("{0}{1}", original, newValue);
             int loc = original.IndexOf(oldValue, StringComparison.Ordinal);
             if (loc == -1)
                 return original;

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace EfCoreScaffoldMssql.Classes
+﻿namespace EfCoreScaffoldMssql.Classes
 {
     public class FkPresetDefinition
     {
@@ -16,5 +10,11 @@ namespace EfCoreScaffoldMssql.Classes
     {
         public string PropertyName { get; set; }
         public string InversePropertyName { get; set; }
+    }
+    
+    public class FkPropertyDisplayNameDefinition
+    {
+        public string Name { get; set; }
+        public string DisplayName { get; set; }
     }
 }
