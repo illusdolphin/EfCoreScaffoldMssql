@@ -11,4 +11,10 @@
         public string PropertyName { get; set; }
         public string InversePropertyName { get; set; }
     }
+    
+    public class FkPropertyDisplayNameDefinition
+    {
+        public string Name { get; set; }
+        public string DisplayName { get; set; }
+    }
 }

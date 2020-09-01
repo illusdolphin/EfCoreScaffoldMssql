@@ -41,7 +41,7 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine("-TD,--templates-directory <Path> - Path with template fies set.hbs and context.hbs");
                     Console.WriteLine("-ETN,--extended-property-type-name <Name> - Extended property name to read model property type from, default is 'TypeName'. If column does not have extended property then model property type is inferred from the database column type.");
                     Console.WriteLine("-V,--verbose <Schema> - Show messages during execution");
-                    Console.WriteLine("-CSD,--custom-settings-directory <Path> - Path with custom settings file ignoreViewColumns.json");
+                    Console.WriteLine("-CSD,--custom-settings-json <Path> - Path to custom settings json file");
 
                     return;
                 }
@@ -106,7 +106,7 @@ namespace EfCoreScaffoldMssql
                 var isVerbose = CommandLineHelper.HasParameterByName(args, "--verbose")
                                 || CommandLineHelper.HasParameterByName(args, "-V");
 
-                var customSettingsDirectory = CommandLineHelper.GetParameterByName(args, "--custom-settings-directory")
+                var customSettingsJsonPath = CommandLineHelper.GetParameterByName(args, "--custom-settings-json")
                                     ?? CommandLineHelper.GetParameterByName(args, "-CSD")
                                     ?? string.Empty;
 
@@ -147,7 +147,7 @@ namespace EfCoreScaffoldMssql
                     IsVerbose = isVerbose,
                     ExtendedPropertyTypeName = extendedPropertyTypeName,
                     CleanUp = cleanUp,
-                    CustomSettingsDirectory = customSettingsDirectory
+                    CustomSettingsJsonPath = customSettingsJsonPath
                 };
                 var scaffolder = new Scaffolder(options);
                 scaffolder.Generate();

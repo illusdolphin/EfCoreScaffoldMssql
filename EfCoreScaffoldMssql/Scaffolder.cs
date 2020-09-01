@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
@@ -127,12 +128,13 @@ namespace EfCoreScaffoldMssql
         {
             const string setFileName = "set.hbs";
             const string contextFileName = "context.hbs";
-            const string customSettingsFileName = "customSettings.json";
             Func<object, string> templateSet;
             Func<object, string> templateContext;
             var fksPresetList = new List<FkPresetDefinition>();
             var tablesColumnsSettingsList = new List<ObjectColumnsSettingModel>();
             var viewsColumnsSettingsList = new List<ObjectColumnsSettingModel>();
+            var fkPropertyDisplayNamesSettingsList = new List<FkPropertyDisplayNameDefinition>();
+            Handlebars.RegisterHelper("IfColumnsContainsAll", HBSHelper.IfColumnsContainsAll);
 
             try
             {
@@ -155,23 +157,25 @@ namespace EfCoreScaffoldMssql
                 return;
             }
 
-            if (!string.IsNullOrEmpty(_options.CustomSettingsDirectory))
+            if (!string.IsNullOrEmpty(_options.CustomSettingsJsonPath))
             {
                 try
                 {
-                    var customSettingsJsonString = Path.Combine(_options.CustomSettingsDirectory, customSettingsFileName);
+                    var customSettingsJsonString = Path.Combine(_options.CustomSettingsJsonPath);
                     var customSettingsJsonObject = JObject.Parse(File.ReadAllText(customSettingsJsonString));
                     var foreignKeys = (JObject)customSettingsJsonObject.GetValue("ForeignKeys");
                     var tablesColumnsSettings = (JObject)customSettingsJsonObject.GetValue("TablesColumns");
                     var viewsColumnsSettings = (JObject)customSettingsJsonObject.GetValue("ViewsColumns");
+                    var foreignKeyPropertyDisplayNames = (JArray)customSettingsJsonObject.GetValue("FKPropertyNames");
 
                     fksPresetList = GetForeignKeysPresetList(foreignKeys);
                     tablesColumnsSettingsList = GetObjectsColumnsSettingsList(tablesColumnsSettings);
                     viewsColumnsSettingsList = GetObjectsColumnsSettingsList(viewsColumnsSettings);
+                    fkPropertyDisplayNamesSettingsList = GetFkPropertyDisplayNamesSettingsList(foreignKeyPropertyDisplayNames);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error loading CustomSettings file {customSettingsFileName}: {ex.Message}");
+                    Console.WriteLine($"Error loading CustomSettings json file: {ex.Message}");
                     return;
                 }
             }
@@ -314,8 +318,9 @@ namespace EfCoreScaffoldMssql
                         var inversePropertyName = string.Empty;
 
                         var fkPreset = fksPresetList.FirstOrDefault(x => x.ForeignKeyName == foreignKey.FkName && x.FkPropertyNames != null);
+                        var hasFKPreset = fkPreset != null && fkPreset.FkPropertyNames != null;
 
-                        if (fkPreset != null && fkPreset.FkPropertyNames != null)
+                        if (hasFKPreset)
                         {
                             propertyName = fkPreset.FkPropertyNames.PropertyName;
                             inversePropertyName = fkPreset.FkPropertyNames.InversePropertyName;
@@ -336,6 +341,16 @@ namespace EfCoreScaffoldMssql
                                 {
                                     propertyName = propertyName.Substring(0, propertyName.Length - 2);
                                 }
+                            }
+                        }
+
+                        if (fkPropertyDisplayNamesSettingsList != null && fkPropertyDisplayNamesSettingsList.Count > 0 && !hasFKPreset)
+                        {
+                            var fkPropertyDisplayNameSetting = fkPropertyDisplayNamesSettingsList.Find(x => x.Name == propertyName);
+                            if (fkPropertyDisplayNameSetting != null && !string.IsNullOrEmpty(fkPropertyDisplayNameSetting.DisplayName))
+                            {
+                                propertyName = fkPropertyDisplayNameSetting.DisplayName;
+                                inversePropertyName = propertyName.ReplaceFirstOccurrance(originTable.EntityName, foreignTable.EntityName, true);
                             }
                         }
 
@@ -536,6 +551,17 @@ namespace EfCoreScaffoldMssql
                 }
             }
             return fksPresetList;
+        }
+
+        private List<FkPropertyDisplayNameDefinition> GetFkPropertyDisplayNamesSettingsList(JArray fkPropertyDisplayNames)
+        {
+            var fkPropertyDisplayNamesSettingsList = new List<FkPropertyDisplayNameDefinition>();
+
+            if (fkPropertyDisplayNames != null)
+            {
+                fkPropertyDisplayNamesSettingsList = fkPropertyDisplayNames.ToObject<List<FkPropertyDisplayNameDefinition>>();
+            }
+            return fkPropertyDisplayNamesSettingsList;
         }
     }
 }

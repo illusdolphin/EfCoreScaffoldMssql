@@ -18,10 +18,33 @@
     ],
     "TableName3": [
       { "Name": "ColumnName1" },
-      { "Name": "ColumnName2", "NewName": "NewColumnName2" },
-      { "Name": "ColumnName3", "NewName": "NewColumnName3" },
+      {
+        "Name": "ColumnName2",
+        "NewName": "NewColumnName2"
+      },
+      {
+        "Name": "ColumnName3",
+        "NewName": "NewColumnName3"
+      },
       { "Name": "ColumnName4" },
       { "Name": "ColumnName4" }
     ]
-  }
+  },
+  "ViewsColumns": {
+    "ViewName1": [
+      { "Name": "ColumnName1" },
+      { "Name": "ColumnName2" },
+      { "Name": "ColumnName3" }
+    ]
+  },
+  "FKPropertyNames": [
+    {
+      "Name": "Propertyname",
+      "DisplayName": "DisplayPropertyName"
+    },
+    {
+      "Name": "Propertyname",
+      "DisplayName": "DisplayPropertyName"
+    }
+  ]
 }
