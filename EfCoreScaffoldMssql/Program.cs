@@ -42,6 +42,7 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine("-ETN,--extended-property-type-name <Name> - Extended property name to read model property type from, default is 'TypeName'. If column does not have extended property then model property type is inferred from the database column type.");
                     Console.WriteLine("-V,--verbose <Schema> - Show messages during execution");
                     Console.WriteLine("-CSD,--custom-settings-json <Path> - Path to custom settings json file");
+                    Console.WriteLine("-AT,--allowed-tables <Tables> - comma-separated list of tables to include, if list is empty - all are generated, except ignore-tables. Example: '[dbo].[Table1],[master].[Table2]'");
 
                     return;
                 }
@@ -110,6 +111,10 @@ namespace EfCoreScaffoldMssql
                                     ?? CommandLineHelper.GetParameterByName(args, "-CSD")
                                     ?? string.Empty;
 
+                var allowedTables = CommandLineHelper.GetParameterByName(args, "--allowed-tables")
+                                    ?? CommandLineHelper.GetParameterByName(args, "-AT")
+                                    ?? string.Empty;
+
                 var includeSchemas = schemas.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToLower())
                     .ToList();
@@ -123,6 +128,9 @@ namespace EfCoreScaffoldMssql
                     .Select(x => x.ToLower())
                     .ToList();
                 var excludeTableValuedFunctionsList = ignoreTableValuedFunctions.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.ToLower())
+                    .ToList();
+                var allowedTablesList = allowedTables.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToLower())
                     .ToList();
 
@@ -147,7 +155,8 @@ namespace EfCoreScaffoldMssql
                     IsVerbose = isVerbose,
                     ExtendedPropertyTypeName = extendedPropertyTypeName,
                     CleanUp = cleanUp,
-                    CustomSettingsJsonPath = customSettingsJsonPath
+                    CustomSettingsJsonPath = customSettingsJsonPath,
+                    AllowedTables = allowedTablesList
                 };
                 var scaffolder = new Scaffolder(options);
                 scaffolder.Generate();

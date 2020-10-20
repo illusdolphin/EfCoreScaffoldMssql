@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
@@ -49,6 +48,7 @@ namespace EfCoreScaffoldMssql
             List<KeyColumnDefinition> keyColumns,
             List<FkDefinition> fkDefinitions,
             List<string> ignoreObjects,
+            List<string> allowedObjects,
             List<ObjectColumnsSettingModel> objectsColumnsSettings,
             string defaultSchemaName)
         {
@@ -59,6 +59,12 @@ namespace EfCoreScaffoldMssql
             {
                 if (_options.Schemas.Any() && !_options.Schemas.Contains(table.SchemaName.ToLower()))
                     continue;
+
+                if (allowedObjects != null && allowedObjects.Any())
+                {
+                    if(!allowedObjects.Contains($"[{table.SchemaName}].[{table.EntityName}]".ToLower()))
+                        continue;
+                }
 
                 if (ignoreObjects.Contains($"[{table.SchemaName}].[{table.EntityName}]".ToLower()))
                     continue;
@@ -265,9 +271,9 @@ namespace EfCoreScaffoldMssql
 
                 var entityViewModels = new List<EntityViewModel>();
 
-                ScaffoldEntities(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, _options.IgnoreTables, tablesColumnsSettingsList, defaultSchemaName);
+                ScaffoldEntities(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, _options.IgnoreTables, _options.AllowedTables, tablesColumnsSettingsList, defaultSchemaName);
 
-                ScaffoldEntities(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews, viewsColumnsSettingsList, defaultSchemaName);
+                ScaffoldEntities(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews, null, viewsColumnsSettingsList, defaultSchemaName);
 
                 var pKeys =
                     (from pk in keyColumns
