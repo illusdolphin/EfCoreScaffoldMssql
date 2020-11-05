@@ -122,7 +122,7 @@ FROM sys.dm_exec_describe_first_result_set ('{0}.{1}', NULL, 0)";
 FROM sys.objects obj
 JOIN sys.schemas s ON s.schema_id = obj.schema_id
 LEFT JOIN sys.all_parameters p on p.object_id = obj.object_id
-WHERE type = 'IF'";
+WHERE type IN ('IF','TF')";
 
         internal static string TableValueFunctionColumnsSql = @"SELECT 
 	SCHEMA_NAME(obj.schema_id) AS [Schema],
@@ -134,6 +134,6 @@ WHERE type = 'IF'";
 FROM sys.columns c
 JOIN sys.objects obj ON obj.object_id = c.object_id
 JOIN sys.schemas s ON s.schema_id = obj.schema_id
-WHERE obj.[type] = 'IF'";
-    }
+WHERE obj.[type] IN ('IF','TF')";
+	}
 }
