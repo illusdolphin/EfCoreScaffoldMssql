@@ -1,5 +1,7 @@
-﻿using System;
+﻿using EfCoreScaffoldMssql.Classes;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EfCoreScaffoldMssql.Helpers
 {
@@ -131,6 +133,19 @@ namespace EfCoreScaffoldMssql.Helpers
                     return text + "s";
                 }
             }
+        }
+        public static string Pluralize(string text, List<EntityPluralizeNameDefinition> pluralizeNameSettingsList, int number = 2)
+        {
+            if (pluralizeNameSettingsList != null)
+            {
+                var pluralizeNameSetting = pluralizeNameSettingsList.FirstOrDefault(x => x.EntityName == text);
+                if (pluralizeNameSetting != null)
+                {
+                    return pluralizeNameSetting.NewEntityPluralizedName;
+                }
+            }
+
+            return Pluralize(text, number);
         }
     }
 }

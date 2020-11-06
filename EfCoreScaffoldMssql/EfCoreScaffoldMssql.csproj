@@ -35,6 +35,7 @@
     <Compile Include="Classes\ColumnDefinition.cs" />
     <Compile Include="Classes\ColumnViewModel.cs" />
     <Compile Include="Classes\ContextViewModel.cs" />
+    <Compile Include="Classes\EntityPluralizedNameDefinition.cs" />
     <Compile Include="Classes\ObjectColumnsSettingModel.cs" />
     <Compile Include="Classes\FkDefinition.cs" />
     <Compile Include="Classes\FkPresetDefinition.cs" />

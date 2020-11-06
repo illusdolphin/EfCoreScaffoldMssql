@@ -1,50 +1,85 @@
 {
   "ForeignKeys": {
-    "FK_Name1": {
-      "PropertyName": "Name1",
-      "InversePropertyName": "Name2"
-    },
-    "FK_Name2": null,
-    "FK_Name3": {
-      "PropertyName": "Name3",
+    "FK_AbacusAccountToControlGroup_AbacusAccount_Id": {
+      "PropertyName": "AbacusAccount",
       "InversePropertyName": null
-    }
+    },
+    "FK_AbacusAccountToControlGroup_ControlGroup_Id": {
+      "PropertyName": "ControlGroup",
+      "InversePropertyName": "AbacusAccountToControlGroup"
+    },
+    "FK_Deficiency_Source": null,
+    "FK_DeficiencyOtherControl_Deficiency_Id": {
+      "PropertyName": "Deficiency",
+      "InversePropertyName": null
+    },
+    "FK_Currency_Principal_Created": {
+      "PropertyName": "CreatedBy",
+      "InversePropertyName": "CreatedByCurrency"
+    },
+    "FK_Currency_Principal_Modified": {
+      "PropertyName": "ModifiedBy",
+      "InversePropertyName": "ModifiedByCurrency"
+    },
+    "FK_CurrencyExchangeRate_Principal_Created": {
+      "PropertyName": "CreatedBy",
+      "InversePropertyName": "CreatedByCurrencyExchangeRate"
+    },
+    "FK_CurrencyExchangeRate_Principal_Modified": {
+      "PropertyName": "ModifiedBy",
+      "InversePropertyName": "ModifiedByCurrencyExchangeRate"
+    },
+    "FK_FieldHelp_Principal_Created": {
+      "PropertyName": "CreatedBy",
+      "InversePropertyName": "CreatedByFieldHelp"
+    },
+    "FK_FieldHelp_Principal_Modified": {
+      "PropertyName": "ModifiedBy",
+      "InversePropertyName": "ModifiedByFieldHelp"
+    },
+    "FK_MngtOrgUnit_MngtOrgUnit": {
+      "PropertyName": "Parent",
+      "InversePropertyName": "MngtOrgUnit"
+    },
   },
   "TablesColumns": {
-    "TableName1": [
-      { "Name": "ColumnName1" },
-      { "Name": "ColumnName2" },
-      { "Name": "ColumnName3" }
+    "ToCtrlAttribute": [
+      { "Name": "Description" },
+      { "Name": "Guid" },
+      { "Name": "Rank" }
     ],
-    "TableName3": [
-      { "Name": "ColumnName1" },
-      {
-        "Name": "ColumnName2",
-        "NewName": "NewColumnName2"
-      },
-      {
-        "Name": "ColumnName3",
-        "NewName": "NewColumnName3"
-      },
-      { "Name": "ColumnName4" },
-      { "Name": "ColumnName4" }
-    ]
-  },
-  "ViewsColumns": {
-    "ViewName1": [
-      { "Name": "ColumnName1" },
-      { "Name": "ColumnName2" },
-      { "Name": "ColumnName3" }
+    "TestOccasionAttribute": [
+      { "Name": "Description" },
+      { "Name": "Guid" },
+      { "Name": "Rank" }
+    ],
+    "ToCtrlTestProcedure": [
+      { "Name": "Description" },
+      { "Name": "Criteria" },
+      { "Name": "Type" },
+      { "Name": "Guid" },
+      { "Name": "Rank" }
+    ],
+    "TestOccasionTestProcedure": [
+      { "Name": "Description" },
+      { "Name": "Criteria" },
+      { "Name": "Type" },
+      { "Name": "Guid" },
+      { "Name": "Rank" }
+    ],
+    "Comment": [
+      { "Name": "Comment", "NewName": "CommentText" }
     ]
   },
   "FKPropertyNames": [
+    { "Name": "CreatedByPrincipal", "DisplayName": "CreatedBy"},
+    { "Name": "ModifiedByPrincipal", "DisplayName": "ModifiedBy"},
+    { "Name": "CompletedByPrincipal", "DisplayName": "CompletedBy"}
+  ],
+  "EntityPluralizedNames": [
     {
-      "Name": "Propertyname",
-      "DisplayName": "DisplayPropertyName"
-    },
-    {
-      "Name": "Propertyname",
-      "DisplayName": "DisplayPropertyName"
+      "Name": "Name",
+      "DisplayName": "NewPlName"
     }
   ]
 }
