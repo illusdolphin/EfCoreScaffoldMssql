@@ -50,6 +50,7 @@ namespace EfCoreScaffoldMssql
             List<string> ignoreObjects,
             List<string> allowedObjects,
             List<ObjectColumnsSettingModel> objectsColumnsSettings,
+            List<EntityPluralizeNameDefinition> entityPluralizeNameSettingsList,
             string defaultSchemaName)
         {
             keyColumns = keyColumns ?? new List<KeyColumnDefinition>();
@@ -72,6 +73,7 @@ namespace EfCoreScaffoldMssql
                 var entityViewModel = table.CloneCopy<EntityDefinition, EntityViewModel>();
 
                 entityViewModel.Namespace = _options.Namespace;
+                entityViewModel.EntityPluralizedName = StringHelper.Pluralize(entityViewModel.EntityName, entityPluralizeNameSettingsList);
 
                 var tableColumns = columns
                     .Where(x => x.SchemaName == table.SchemaName && x.ObjectName == table.EntityName)
@@ -140,6 +142,7 @@ namespace EfCoreScaffoldMssql
             var tablesColumnsSettingsList = new List<ObjectColumnsSettingModel>();
             var viewsColumnsSettingsList = new List<ObjectColumnsSettingModel>();
             var fkPropertyDisplayNamesSettingsList = new List<FkPropertyDisplayNameDefinition>();
+            var entityPluralizeNameSettingsList = new List<EntityPluralizeNameDefinition>();
             Handlebars.RegisterHelper("TableContainsAllColumns", HBSHelper.TableContainsAllColumns);
 
             try
@@ -162,7 +165,6 @@ namespace EfCoreScaffoldMssql
                 Console.WriteLine($"Error compiling Handlebars template {contextFileName}: {ex.Message}");
                 return;
             }
-
             if (!string.IsNullOrEmpty(_options.CustomSettingsJsonPath))
             {
                 try
@@ -173,11 +175,13 @@ namespace EfCoreScaffoldMssql
                     var tablesColumnsSettings = (JObject)customSettingsJsonObject.GetValue("TablesColumns");
                     var viewsColumnsSettings = (JObject)customSettingsJsonObject.GetValue("ViewsColumns");
                     var foreignKeyPropertyDisplayNames = (JArray)customSettingsJsonObject.GetValue("FKPropertyNames");
+                    var entityPluralizeNameSettings = (JArray)customSettingsJsonObject.GetValue("EntityPluralizedNames");
 
                     fksPresetList = GetForeignKeysPresetList(foreignKeys);
                     tablesColumnsSettingsList = GetObjectsColumnsSettingsList(tablesColumnsSettings);
                     viewsColumnsSettingsList = GetObjectsColumnsSettingsList(viewsColumnsSettings);
                     fkPropertyDisplayNamesSettingsList = GetFkPropertyDisplayNamesSettingsList(foreignKeyPropertyDisplayNames);
+                    entityPluralizeNameSettingsList = GetEntityPluralizedNameSettingsList(entityPluralizeNameSettings);
                 }
                 catch (Exception ex)
                 {
@@ -271,9 +275,9 @@ namespace EfCoreScaffoldMssql
 
                 var entityViewModels = new List<EntityViewModel>();
 
-                ScaffoldEntities(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, _options.IgnoreTables, _options.AllowedTables, tablesColumnsSettingsList, defaultSchemaName);
+                ScaffoldEntities(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, _options.IgnoreTables, _options.AllowedTables, tablesColumnsSettingsList, entityPluralizeNameSettingsList, defaultSchemaName);
 
-                ScaffoldEntities(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews, null, viewsColumnsSettingsList, defaultSchemaName);
+                ScaffoldEntities(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews, null, viewsColumnsSettingsList, entityPluralizeNameSettingsList, defaultSchemaName);
 
                 var pKeys =
                     (from pk in keyColumns
@@ -412,12 +416,12 @@ namespace EfCoreScaffoldMssql
 
                 if (_options.GenerateStoredProcedures)
                 {
-                    WriteObjectSets(spDefinitions, modelsDirectory, templateSet, fileNames, tablesColumnsSettingsList);
+                    WriteObjectSets(spDefinitions, modelsDirectory, templateSet, fileNames, tablesColumnsSettingsList, entityPluralizeNameSettingsList);
                 }
 
                 if (_options.GenerateTableValuedFunctions)
                 {
-                    WriteObjectSets(tvfDefinitions, modelsDirectory, templateSet, fileNames, tablesColumnsSettingsList);
+                    WriteObjectSets(tvfDefinitions, modelsDirectory, templateSet, fileNames, tablesColumnsSettingsList, entityPluralizeNameSettingsList);
                 }
 
                 var contextViewModel = new ContextViewModel
@@ -473,7 +477,13 @@ namespace EfCoreScaffoldMssql
             return objectDefinitions;
         }
 
-        private void WriteObjectSets(IEnumerable<StoredObjectDefinition> objectDefinitions, string modelsDirectory, Func<object, string> templateSet, List<string> fileNames, List<ObjectColumnsSettingModel> objectsColumnsSettings = null)
+        private void WriteObjectSets(
+            IEnumerable<StoredObjectDefinition> objectDefinitions, 
+            string modelsDirectory, 
+            Func<object, string> templateSet, 
+            List<string> fileNames, 
+            List<ObjectColumnsSettingModel> objectsColumnsSettings, 
+            List<EntityPluralizeNameDefinition> entityPluralizeNameSettingsList)
         {
             foreach (var p in objectDefinitions.Where(x => x.Columns.Count > 0))
             {
@@ -481,6 +491,7 @@ namespace EfCoreScaffoldMssql
                 {
                     SchemaName = p.Schema,
                     EntityName = p.ResultTypeName,
+                    EntityPluralizedName = StringHelper.Pluralize(p.ResultTypeName, entityPluralizeNameSettingsList),
                     Namespace = _options.Namespace,
                     IsVirtual = true,
                     Columns = p.Columns.Select(c => new ColumnViewModel
@@ -569,5 +580,16 @@ namespace EfCoreScaffoldMssql
             }
             return fkPropertyDisplayNamesSettingsList;
         }
+        private List<EntityPluralizeNameDefinition> GetEntityPluralizedNameSettingsList(JArray entityPluralizeNameSettings)
+        {
+            var fkPropertyDisplayNamesSettingsList = new List<EntityPluralizeNameDefinition>();
+
+            if (entityPluralizeNameSettings != null)
+            {
+                fkPropertyDisplayNamesSettingsList = entityPluralizeNameSettings.ToObject<List<EntityPluralizeNameDefinition>>();
+            }
+            return fkPropertyDisplayNamesSettingsList;
+        }
+
     }
 }
