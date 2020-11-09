@@ -373,7 +373,10 @@ namespace EfCoreScaffoldMssql
 
                         if (!isOneToOne)
                         {
-                            inversePropertyName = StringHelper.Pluralize(inversePropertyName);
+                            if (!hasFKPreset || !string.Equals(fkPreset.FkPropertyNames.InversePropertyName, inversePropertyName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                inversePropertyName = StringHelper.Pluralize(inversePropertyName);
+                            }
                         }
 
                         if (originTable == foreignTable)
