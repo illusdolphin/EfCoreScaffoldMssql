@@ -43,7 +43,7 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine("-V,--verbose <Schema> - Show messages during execution");
                     Console.WriteLine("-CSD,--custom-settings-json <Path> - Path to custom settings json file");
                     Console.WriteLine("-AT,--allowed-tables <Tables> - comma-separated list of tables to include, if list is empty - all are generated, except ignore-tables. Example: '[dbo].[Table1],[master].[Table2]'");
-
+                    Console.WriteLine("-ISP,--ignore-stored-procedures - comma-separated list of SPs to exclude. Example: '[dbo].[sp1],[master].[sp2]'");
                     return;
                 }
 

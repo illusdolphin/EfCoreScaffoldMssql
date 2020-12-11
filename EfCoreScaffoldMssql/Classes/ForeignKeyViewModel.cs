@@ -9,5 +9,7 @@
         public bool IsOneToOne { get; set; }
 
         public string InverseEntityName { get; set; }
+
+        public bool IsOptional { get; set; }
     }
 }
