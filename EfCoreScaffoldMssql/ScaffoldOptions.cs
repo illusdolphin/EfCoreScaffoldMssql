@@ -11,6 +11,7 @@ namespace EfCoreScaffoldMssql
             IgnoreTables = new List<string>();
             IgnoreViews = new List<string>();
             IgnoreStoredProcedure = new List<string>();
+            IgnoreTableValuedFunctions = new List<string>();
             AllowedTables = new List<string>();
         }
 

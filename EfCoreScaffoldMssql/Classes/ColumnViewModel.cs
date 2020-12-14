@@ -7,7 +7,7 @@ namespace EfCoreScaffoldMssql.Classes
     {
         public string DisplayName { get; set; }
         public bool IsString => CSharpType == "string";
-        public bool HasLengthLimit => MaxLength != -1 && !(TypeName == "ntext" || TypeName == "text");
+        public bool HasLengthLimit => MaxLength > 0 && !(TypeName == "ntext" || TypeName == "text");
         public int MaxStringLength => TypeName == "nvarchar" || TypeName == "nchar" ? MaxLength / 2 : MaxLength;
         public bool IsRequiredString => !IsNullable && IsString && !IsKey;
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using EfCoreScaffoldMssql.Classes;
 using EfCoreScaffoldMssql.Helpers;
@@ -242,7 +243,7 @@ namespace EfCoreScaffoldMssql
                 var spDefinitions = new List<StoredObjectDefinition>();
                 if (_options.GenerateStoredProcedures)
                 {
-                    spDefinitions = GetStoredObjectsDefinition(connection, SchemaSql.StoredProcedureParametersSql, false);
+                    spDefinitions = GetStoredObjectsDefinition(connection, SchemaSql.StoredProcedureParametersSql, false, _options.IgnoreStoredProcedure);
                     WriteLine("Stored procedures parameters information received");
 
                     foreach (var sp in spDefinitions)
@@ -258,7 +259,7 @@ namespace EfCoreScaffoldMssql
 
                 if (_options.GenerateTableValuedFunctions)
                 {
-                    tvfDefinitions = GetStoredObjectsDefinition(connection, SchemaSql.TableValueFunctionParametersSql, true);
+                    tvfDefinitions = GetStoredObjectsDefinition(connection, SchemaSql.TableValueFunctionParametersSql, true, _options.IgnoreTableValuedFunctions);
                     WriteLine("Table valued functions parameters information received");
 
                     var tvfColumns = connection.ReadObjects<TableValuedColumn>(SchemaSql.TableValueFunctionColumnsSql);
@@ -389,6 +390,7 @@ namespace EfCoreScaffoldMssql
                         var inversePropName = keyCount == 0 ? inversePropertyName : $"{inversePropertyName}_{keyCount}";
 
                         var foreignKeyViewModel = foreignKey.CloneCopy<FkDefinition, ForeignKeyViewModel>();
+                        foreignKeyViewModel.IsOptional = foreignTable.Columns.Where(c => foreignKey.FkColumns.Contains(c.Name)).All(c => c.IsNullable);
                         foreignKeyViewModel.PropertyName = propName;
                         foreignKeyViewModel.InversePropertyName = inversePropName;
                         foreignKeyViewModel.InverseEntityName = originTable.EntityName;
@@ -455,7 +457,7 @@ namespace EfCoreScaffoldMssql
             }
         }
 
-        private List<StoredObjectDefinition> GetStoredObjectsDefinition(SqlConnection connection, string sql, bool isFunction)
+        private List<StoredObjectDefinition> GetStoredObjectsDefinition(SqlConnection connection, string sql, bool isFunction, List<string> excludedObjects)
         {
             var storedProcedureParameters = connection.ReadObjects<StoredObjectParameter>(sql);
             var objectDefinitions = (from p in storedProcedureParameters
@@ -477,7 +479,7 @@ namespace EfCoreScaffoldMssql
                         SqlType = p.SqlType
                     }).OrderBy(p => p.Order).ToList()
                 }).ToList();
-            return objectDefinitions;
+            return objectDefinitions.Where(o => !excludedObjects.Contains($"[{o.Schema}].[{o.Name}]".ToLower())).ToList();
         }
 
         private void WriteObjectSets(
