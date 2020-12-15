@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using EfCoreScaffoldMssql.Classes;
 using EfCoreScaffoldMssql.Helpers;
@@ -406,11 +405,48 @@ namespace EfCoreScaffoldMssql
                     }
                 }
 
+                if (_options.AllowManyToMany)
+                {
+                    foreach (var model in entityViewModels)
+                    {
+                        var isManyToMany = model.Columns.Count == 2 && model.HasForeignKeys && model.Keys.Count == 2 && model.ForeignKeys.Count == 2;
+                        if (isManyToMany && !_options.IgnoreObjectsForManyToMany.Contains($"[{model.SchemaName}].[{model.EntityName}]"))
+                        {
+                            var leftFk = model.ForeignKeys.Single(f => f.FkColumns[0] == model.ColumnsEfPropertyOrder.First().Name);
+                            var rightFk = model.ForeignKeys.Single(f => f.FkColumns[0] == model.ColumnsEfPropertyOrder.Last().Name);
+
+                            var leftTable = entityViewModels.SingleOrDefault(x => x.SchemaName == leftFk.PkSchema && x.EntityName == leftFk.PkTable);
+                            var rightTable = entityViewModels.SingleOrDefault(x => x.SchemaName == rightFk.PkSchema && x.EntityName == rightFk.PkTable);
+
+                            if (leftTable != null && rightTable != null)
+                            {
+                                model.IsManyToMany = true;
+
+                                model.ManyToManyLeftTable = leftTable.EntityName;
+                                model.ManyToManyRightTable = rightTable.EntityName;
+                                
+                                var leftTableInverseKey = leftTable.InverseKeys.SingleOrDefault(k => k.FkName == leftFk.FkName);
+                                leftTableInverseKey.FkTable = model.ManyToManyRightTable;
+                                leftTableInverseKey.PropertyName = fksPresetList.Find(f => f.ForeignKeyName == leftTableInverseKey.FkName)?.FkPropertyNames.PropertyName ?? StringHelper.Pluralize(leftTableInverseKey.FkTable);
+                                leftTableInverseKey.IsManyToMany = true;
+
+                                var rightTableInverseKey = rightTable.InverseKeys.SingleOrDefault(k => k.FkName == rightFk.FkName);
+                                rightTableInverseKey.FkTable = model.ManyToManyLeftTable;
+                                rightTableInverseKey.PropertyName = fksPresetList.Find(f => f.ForeignKeyName == rightTableInverseKey.FkName)?.FkPropertyNames.PropertyName ?? StringHelper.Pluralize(rightTableInverseKey.FkTable);
+                                rightTableInverseKey.IsManyToMany = true;
+
+                                model.ManyToManyLeftInversePropertyName = leftTableInverseKey.PropertyName;
+                                model.ManyToManyRightInversePropertyName = rightTableInverseKey.PropertyName;
+                            }
+                        }
+                    }
+                }
+
                 var fileNames = new List<string>();
                 var modelsDirectory = Path.Combine(_options.Directory, _options.ModelsPath);
                 Directory.CreateDirectory(modelsDirectory);
 
-                foreach (var tableViewModel in entityViewModels)
+                foreach (var tableViewModel in entityViewModels.Where(e => !e.IsManyToMany))
                 {
                     var setResult = templateSet(tableViewModel);
                     var setResultFileName = Path.Combine(modelsDirectory, tableViewModel.EntityName + ".cs");

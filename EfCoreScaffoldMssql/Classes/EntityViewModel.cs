@@ -53,6 +53,12 @@ namespace EfCoreScaffoldMssql.Classes
         public List<ForeignKeyViewModel> InverseKeys { get; set; }
         public List<Dependency> Dependencies { get; set; }
         public bool IsDefaultSchema { get; set; }
+
+        public bool IsManyToMany { get; set; }
+        public string ManyToManyLeftTable { get; set; }
+        public string ManyToManyRightTable { get; set; }
+        public string ManyToManyLeftInversePropertyName { get; set; }
+        public string ManyToManyRightInversePropertyName { get; set; }
     }
 
     public class Dependency
