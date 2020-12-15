@@ -44,6 +44,9 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine("-CSD,--custom-settings-json <Path> - Path to custom settings json file");
                     Console.WriteLine("-AT,--allowed-tables <Tables> - comma-separated list of tables to include, if list is empty - all are generated, except ignore-tables. Example: '[dbo].[Table1],[master].[Table2]'");
                     Console.WriteLine("-ISP,--ignore-stored-procedures - comma-separated list of SPs to exclude. Example: '[dbo].[sp1],[master].[sp2]'");
+                    Console.WriteLine("-AMTM,--allow-many-to-many - default is not supported");
+                    Console.WriteLine("-IFOMTM,--ignore-for-objects-many-to-many - comma-separated list of tables to exclude many-to-many relationships. Example: '[dbo].[Table1],[master].[Table2]'");
+
                     return;
                 }
 
@@ -115,6 +118,13 @@ namespace EfCoreScaffoldMssql
                                     ?? CommandLineHelper.GetParameterByName(args, "-AT")
                                     ?? string.Empty;
 
+                var allowManyToMany = CommandLineHelper.HasParameterByName(args, "--allow-many-to-many")
+                                               || CommandLineHelper.HasParameterByName(args, "-AMTM");
+
+                var ignoreForObjectsManyToMany = CommandLineHelper.GetParameterByName(args, "--ignore-for-objects-many-to-many")
+                                             ?? CommandLineHelper.GetParameterByName(args, "-IFOMTM")
+                                             ?? string.Empty;
+
                 var includeSchemas = schemas.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToLower())
                     .ToList();
@@ -131,6 +141,9 @@ namespace EfCoreScaffoldMssql
                     .Select(x => x.ToLower())
                     .ToList();
                 var allowedTablesList = allowedTables.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.ToLower())
+                    .ToList();
+                var excludeObjectsForManyToMany = ignoreForObjectsManyToMany.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToLower())
                     .ToList();
 
@@ -156,7 +169,9 @@ namespace EfCoreScaffoldMssql
                     ExtendedPropertyTypeName = extendedPropertyTypeName,
                     CleanUp = cleanUp,
                     CustomSettingsJsonPath = customSettingsJsonPath,
-                    AllowedTables = allowedTablesList
+                    AllowedTables = allowedTablesList,
+                    AllowManyToMany = allowManyToMany,
+                    IgnoreObjectsForManyToMany = excludeObjectsForManyToMany
                 };
                 var scaffolder = new Scaffolder(options);
                 scaffolder.Generate();

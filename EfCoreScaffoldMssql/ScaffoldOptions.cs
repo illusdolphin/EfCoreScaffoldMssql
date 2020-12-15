@@ -51,5 +51,9 @@ namespace EfCoreScaffoldMssql
 
         public bool CleanUp { get; set; }
         public string CustomSettingsJsonPath { get; set; }
+
+        public bool AllowManyToMany { get; set; }
+
+        public List<string> IgnoreObjectsForManyToMany { get; set; }
     }
 }

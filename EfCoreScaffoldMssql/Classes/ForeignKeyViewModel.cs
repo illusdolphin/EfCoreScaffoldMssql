@@ -7,6 +7,7 @@
         public string InversePropertyName { get; set; }
 
         public bool IsOneToOne { get; set; }
+        public bool IsManyToMany { get; set; }
 
         public string InverseEntityName { get; set; }
 
