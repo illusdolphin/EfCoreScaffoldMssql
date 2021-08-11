@@ -6,6 +6,8 @@ namespace EfCoreScaffoldMssql.Classes
     {
         public string SchemaName { get; set; }
         public string EntityName { get; set; }
+        public string Definition { get; set; }
+        public bool IsViewEntity { get; set; }
 
         public override string ToString()
         {

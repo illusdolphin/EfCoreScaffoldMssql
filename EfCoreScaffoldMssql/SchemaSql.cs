@@ -3,10 +3,11 @@ namespace EfCoreScaffoldMssql
 {
     internal static class SchemaSql
     {
-        internal static string TablesSql = @"SELECT s.name as SchemaName, t.name as EntityName FROM Sys.tables t
+        internal static string TablesSql = @"SELECT s.name as SchemaName, t.name as EntityName, NULL as Definition, convert(bit, 0) AS IsViewEntity FROM Sys.tables t
 JOIN Sys.schemas s on s.schema_id = t.schema_id";
 
-        internal static string ViewsSql = @"SELECT s.name as SchemaName, t.name as EntityName FROM Sys.views t
+        internal static string ViewsSql = @"SELECT s.name as SchemaName, t.name as EntityName,
+(SELECT OBJECT_DEFINITION(OBJECT_ID(s.[name]+'.'+t.[name]) )) as Definition, convert(bit, 1) AS IsViewEntity FROM Sys.views t
 JOIN Sys.schemas s on s.schema_id = t.schema_id";
 
         internal static string TableColumnsSql = @"select 
@@ -98,7 +99,8 @@ max_length AS [MaxLength],
 CASE WHEN type_name(system_type_id) = 'uniqueidentifier' THEN par.[precision] ELSE OdbcPrec(system_type_id, max_length, par.[precision]) END AS [Precision],  
 OdbcScale(system_type_id, scale) AS [Scale],  
 parameter_id AS [Order],  
-CONVERT(sysname, CASE WHEN system_type_id in (35, 99, 167, 175, 231, 239) THEN ServerProperty('collation') END) AS [Collation]  
+CONVERT(sysname, CASE WHEN system_type_id in (35, 99, 167, 175, 231, 239) THEN ServerProperty('collation') END) AS [Collation],
+(SELECT OBJECT_DEFINITION(OBJECT_ID(s.[name]+'.'+p.[name]) )) as Definition
 FROM sys.procedures p
 LEFT JOIN sys.parameters par on par.object_id = p.object_id
 JOIN sys.schemas s ON s.schema_id = p.schema_id";
@@ -118,7 +120,8 @@ FROM sys.dm_exec_describe_first_result_set ('{0}.{1}', NULL, 0)";
     CONVERT(bit, 0) AS [IsOutput],
 	p.is_nullable AS [IsNullable],
 	type_name(p.system_type_id) AS [SqlType],
-	p.parameter_id AS [Order]
+	p.parameter_id AS [Order],
+    (SELECT OBJECT_DEFINITION(OBJECT_ID(SCHEMA_NAME(obj.schema_id)+'.'+obj.[name]) )) as Definition
 FROM sys.objects obj
 JOIN sys.schemas s ON s.schema_id = obj.schema_id
 LEFT JOIN sys.all_parameters p on p.object_id = obj.object_id

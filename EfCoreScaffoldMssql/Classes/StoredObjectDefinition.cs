@@ -10,6 +10,7 @@ namespace EfCoreScaffoldMssql.Classes
         public string Name { get; set; }
         public string ResultTypeName => Name + "_Result";
         public bool IsFunction { get; set; }
+        public string Definition { get; set; }
 
         public List<StoredObjectParameter> Parameters { get; set; }
 
@@ -35,6 +36,7 @@ namespace EfCoreScaffoldMssql.Classes
         public string CSharpTypeDefinition => SqlType.GetCSharpType();
         public string CSharpName => ParameterName.Replace("@", "").LowerCaseFirstChar();
         public string ParameterNameWithoutAt => ParameterName.Replace("@", "");
+        public string Definition { get; set; }
 
         public override string ToString()
         {
