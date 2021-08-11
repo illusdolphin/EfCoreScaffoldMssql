@@ -71,7 +71,8 @@ namespace EfCoreScaffoldMssql
                     continue;
 
                 var entityViewModel = table.CloneCopy<EntityDefinition, EntityViewModel>();
-
+                entityViewModel.Definition = table.Definition != null ? $"\n///{table.Definition.Replace("\n", "\n///")}" : null;
+                entityViewModel.IsViewEntity = table.IsViewEntity;
                 entityViewModel.Namespace = _options.Namespace;
                 entityViewModel.EntityPluralizedName = StringHelper.Pluralize(entityViewModel.EntityName, entityPluralizeNameSettingsList);
 
@@ -504,6 +505,7 @@ namespace EfCoreScaffoldMssql
                     Schema = sGroup.Key.Schema,
                     Name = sGroup.Key.Name,
                     IsFunction = isFunction,
+                    Definition = $"\n///{sGroup.First().Definition.Replace("\n", "\n///")}",
                     Parameters = sGroup.Where(p => !string.IsNullOrEmpty(p.ParameterName)).Select(p => new StoredObjectParameter
                     {
                         ParameterName = p.ParameterName,
@@ -535,6 +537,7 @@ namespace EfCoreScaffoldMssql
                     EntityPluralizedName = StringHelper.Pluralize(p.ResultTypeName, entityPluralizeNameSettingsList),
                     Namespace = _options.Namespace,
                     IsVirtual = true,
+                    Definition = p.Definition,
                     Columns = p.Columns.Select(c => new ColumnViewModel
                     {
                         SchemaName = p.Schema,
