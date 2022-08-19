@@ -35,6 +35,7 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine("-SP,--stored-procedures - comma-separated list of SPs to include, if list is empty - all are generated");
                     //TODO: Console.WriteLine("-TVF,--table-value-functions - comma-separated list of TVFs to include, if list is empty - all are generated");
                     Console.WriteLine("-IT,--ignore-tables <Tables> - comma-separated list of tables to exclude. Example: '[dbo].Table1,[master].Table2'");
+                    Console.WriteLine("-INCT,--include-tables <Tables> - comma-separated list of tables to include. Example: '[dbo].Table1,[master].Table2'");
                     Console.WriteLine("-IV,--ignore-views <Views> - comma-separated list of view to exclude. Example: '[dbo].View1,[master].View2'");
                     Console.WriteLine("-FR,--foreign-key-regex <regex> - Regex to extract foreign property name. Example: 'FK_([a-zA-Z]+)_(?<PropertyName>.+)'");
                     Console.WriteLine("-CS,--connectionString <ConnectionString> - Connection string to the db, example: Data Source=.;Initial Catalog=Database;integrated security=SSPI");
@@ -68,6 +69,10 @@ namespace EfCoreScaffoldMssql
 
                 var excludeTables = CommandLineHelper.GetParameterByName(args, "--ignore-tables")
                               ?? CommandLineHelper.GetParameterByName(args, "-IT")
+                              ?? string.Empty;
+
+                var includeTables = CommandLineHelper.GetParameterByName(args, "--include-tables")
+                              ?? CommandLineHelper.GetParameterByName(args, "-INCT")
                               ?? string.Empty;
 
                 var excludeViews = CommandLineHelper.GetParameterByName(args, "--ignore-views")
@@ -131,6 +136,10 @@ namespace EfCoreScaffoldMssql
                 var excludeTablesList = excludeTables.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToLower())
                     .ToList();
+                var includeTablesList = includeTables.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.ToLower())
+                    .ToList();
+
                 var excludeViewsList = excludeViews.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToLower())
                     .ToList();
@@ -170,6 +179,7 @@ namespace EfCoreScaffoldMssql
                     CleanUp = cleanUp,
                     CustomSettingsJsonPath = customSettingsJsonPath,
                     AllowedTables = allowedTablesList,
+                    IncludeTables = includeTablesList,
                     AllowManyToMany = allowManyToMany,
                     IgnoreObjectsForManyToMany = excludeObjectsForManyToMany
                 };
