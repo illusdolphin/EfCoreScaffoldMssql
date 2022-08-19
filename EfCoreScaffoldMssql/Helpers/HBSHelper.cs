@@ -1,14 +1,9 @@
 ﻿using EfCoreScaffoldMssql.Classes;
 using HandlebarsDotNet;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EfCoreScaffoldMssql.Helpers
 {
@@ -16,11 +11,6 @@ namespace EfCoreScaffoldMssql.Helpers
     {
         public static void TableContainsAllColumns(TextWriter output, HelperOptions options, dynamic context, params object[] arguments)
         {
-            if (arguments.Length < 2)
-            {
-                options.Inverse(output, (object)context);
-                return;
-            }
             var stringArguments = arguments.Where(x => x is string).Select(x => x.ToString()).Where(x => !string.IsNullOrEmpty(x)).ToList<string>();
             if (context is object && stringArguments != null && stringArguments.Count > 0)
             {
@@ -33,10 +23,10 @@ namespace EfCoreScaffoldMssql.Helpers
                 }
                 else
                 {
+                    Console.WriteLine($"#TableContainsAllColumns: Can not find columns for type {contextObject.GetType().GetProperty("EntityName")?.GetValue(contextObject, null)}");
                     options.Inverse(output, (object)context);
                     return;
                 }
-
 
                 foreach (var stringArgument in stringArguments)
                 {
@@ -56,7 +46,6 @@ namespace EfCoreScaffoldMssql.Helpers
                         options.Inverse(output, (object)context);
                         return;
                     }
-
                 }
                 options.Template(output, (object)context);
                 return;
