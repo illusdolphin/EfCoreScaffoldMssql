@@ -78,8 +78,15 @@
   ],
   "EntityPluralizedNames": [
     {
-      "Name": "Name",
-      "DisplayName": "NewPlName"
+	  "EntityName": "Name",
+	  "NewEntityPluralizedName": "NewPlName"
+    }
+  ],
+  "EntityDisplayNames": [
+    {
+	  "Schema": "EntitySchema",
+      "Name": "EntityName",
+      "DisplayName": "NewEntityName"
     }
   ]
 }

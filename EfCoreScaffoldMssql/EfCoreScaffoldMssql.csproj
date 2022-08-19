@@ -8,9 +8,10 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>EfCoreScaffoldMssql</RootNamespace>
     <AssemblyName>EfCoreScaffoldMssql</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -35,6 +36,7 @@
     <Compile Include="Classes\ColumnDefinition.cs" />
     <Compile Include="Classes\ColumnViewModel.cs" />
     <Compile Include="Classes\ContextViewModel.cs" />
+    <Compile Include="Classes\EntityDisplayNameDefinition.cs" />
     <Compile Include="Classes\EntityPluralizeNameDefinition.cs" />
     <Compile Include="Classes\ObjectColumnsSettingModel.cs" />
     <Compile Include="Classes\FkDefinition.cs" />

@@ -13,6 +13,7 @@ namespace EfCoreScaffoldMssql
             IgnoreStoredProcedure = new List<string>();
             IgnoreTableValuedFunctions = new List<string>();
             AllowedTables = new List<string>();
+            IncludeTables = new List<string>();
         }
 
         public string ConnectionString { get; set; }
@@ -36,6 +37,8 @@ namespace EfCoreScaffoldMssql
         public List<string> IgnoreTables { get; set; }
 
         public List<string> AllowedTables { get; set; }
+
+        public List<string> IncludeTables { get; set; }
 
         public List<string> IgnoreViews { get; set; }
 

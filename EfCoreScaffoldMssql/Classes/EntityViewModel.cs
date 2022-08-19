@@ -15,6 +15,7 @@ namespace EfCoreScaffoldMssql.Classes
         }
 
         public string Namespace { get; set; }
+        public string EntityTableName { get; set; }
         public string EntityPluralizedName { get; set; }
 
         public bool IsVirtual { get; set; }
