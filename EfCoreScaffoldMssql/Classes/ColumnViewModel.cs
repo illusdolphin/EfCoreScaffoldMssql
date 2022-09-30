@@ -7,6 +7,16 @@ namespace EfCoreScaffoldMssql.Classes
     {
         public string DisplayName { get; set; }
         public bool IsString => CSharpType == "string";
+        public string TypeName
+        {
+            get
+            {
+                if (ColumnTypeName == "decimal")
+                    return $"decimal({Precision}, {Scale})";
+                return ColumnTypeName;
+            }
+        }
+
         public bool HasLengthLimit => MaxLength > 0 && !(TypeName == "ntext" || TypeName == "text");
         public int MaxStringLength => TypeName == "nvarchar" || TypeName == "nchar" ? MaxLength / 2 : MaxLength;
         public bool IsRequiredString => !IsNullable && IsString && !IsKey;
@@ -38,13 +48,14 @@ namespace EfCoreScaffoldMssql.Classes
         {
             get
             {
-                switch (TypeName)
+                switch (ColumnTypeName)
                 {
                     case "date":
                     case "datetime":
                     case "datetime2":
                     case "geometry":
                     case "smalldatetime":
+                    case "decimal":
                         return true;
                 }
 
@@ -81,7 +92,7 @@ namespace EfCoreScaffoldMssql.Classes
                     return ExtendedPropertiesTypeName;
                 }
 
-                return TypeName.GetCSharpType();
+                return ColumnTypeName.GetCSharpType();
             }
         }
     }

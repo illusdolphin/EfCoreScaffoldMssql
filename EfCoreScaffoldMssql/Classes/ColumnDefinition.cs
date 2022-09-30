@@ -6,8 +6,10 @@ namespace EfCoreScaffoldMssql.Classes
         public string Name { get; set; }
         public string SchemaName { get; set; }
         public string ObjectName { get; set; }
-        public string TypeName { get; set; }
+        public string ColumnTypeName { get; set; }
         public int MaxLength { get; set; }
+        public int Precision { get; set; }
+        public int Scale { get; set; }
         public bool IsComputed { get; set; }
         public bool IsNullable { get; set; }
         public bool IsIdentity { get; set; }
@@ -18,7 +20,7 @@ namespace EfCoreScaffoldMssql.Classes
 
         public override string ToString()
         {
-            return $"{SchemaName}.{ObjectName}.{Name} {ExtendedPropertiesTypeName ?? TypeName}[{MaxLength}]";
+            return $"{SchemaName}.{ObjectName}.{Name} {ExtendedPropertiesTypeName ?? ColumnTypeName}[{MaxLength}]";
         }
     }
 }
