@@ -53,6 +53,8 @@ namespace EfCoreScaffoldMssql.Classes
         public bool IsNullable { get; set; }
 
         public string SqlType { get; set; }
+        public int Precision { get; set; }
+        public int Scale { get; set; }
 
         public override string ToString()
         {

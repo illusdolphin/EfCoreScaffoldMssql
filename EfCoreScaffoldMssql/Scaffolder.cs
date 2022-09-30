@@ -32,7 +32,7 @@ namespace EfCoreScaffoldMssql
 
         private void AddDependencies(EntityViewModel entity, List<ColumnDefinition> columns)
         {
-            if (columns.Any(x => x.TypeName == "geometry"))
+            if (columns.Any(x => x.ColumnTypeName == "geometry"))
             {
                 entity.Dependencies.Add(new Dependency
                 {
@@ -568,7 +568,9 @@ namespace EfCoreScaffoldMssql
                     {
                         SchemaName = p.Schema,
                         Name = c.Name,
-                        TypeName = c.SqlType,
+                        ColumnTypeName = c.SqlType,
+                        Precision = c.Precision,
+                        Scale = c.Scale,
                         IsNullable = c.IsNullable,
                         DisplayName = PropertyHelper.GetColumnNameToDisplay(c.Name, p.ResultTypeName, objectsColumnsSettings)
                     }).ToList()
