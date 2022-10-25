@@ -6,7 +6,7 @@ namespace EfCoreScaffoldMssql.Classes
     public class ColumnViewModel: ColumnDefinition
     {
         public string DisplayName { get; set; }
-        public bool IsString => CSharpType == "string";
+        public bool IsString => CSharpType.StartsWith("string");
         public string TypeName
         {
             get
@@ -63,20 +63,15 @@ namespace EfCoreScaffoldMssql.Classes
             }
         }
 
+        public bool EnableReferenceNullableTypes { get; set; }
+
         public string CSharpType
         {
             get
             {
                 var typeDef = CSharpTypeDefinition;
-                switch (typeDef)
-                {
-                    case "string":
-                    case "byte[]":
-                    case "object":
-                        return typeDef;
-                }
 
-                if (IsNullable && TypeName != "geometry")
+                if (IsNullable && (TypeName != "geometry" || EnableReferenceNullableTypes == true))
                     return typeDef + "?";
 
                 return typeDef;

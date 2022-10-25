@@ -120,6 +120,7 @@ namespace EfCoreScaffoldMssql
                     var keyIndex = tableKeys.FindIndex(x => x.ColumnName == tableColumn.Name);
                     columnViewModel.IsKey = keyIndex > -1;
                     columnViewModel.KeyColumnNumber = keyIndex + 1;
+                    columnViewModel.EnableReferenceNullableTypes = _options.NullableReferenceTypes;
 
                     var hasFkDefinition = tableFks.Any(x => x.FkColumns.Contains(tableColumn.Name));
                     columnViewModel.IsPartOfForeignKey = hasFkDefinition;
@@ -572,6 +573,7 @@ namespace EfCoreScaffoldMssql
                         Precision = c.Precision,
                         Scale = c.Scale,
                         IsNullable = c.IsNullable,
+                        EnableReferenceNullableTypes = _options.NullableReferenceTypes,
                         DisplayName = PropertyHelper.GetColumnNameToDisplay(c.Name, p.ResultTypeName, objectsColumnsSettings)
                     }).ToList()
                 };

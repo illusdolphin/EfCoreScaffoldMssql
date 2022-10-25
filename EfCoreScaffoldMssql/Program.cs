@@ -33,13 +33,14 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine($"-M,--models <Path> - path for models, default is '{defaultModels}'");
                     Console.WriteLine("-S,--schema <Schema> - comma-separated list of schema to include, default is not defined, meaning is to include all");
                     Console.WriteLine("-SP,--stored-procedures - comma-separated list of SPs to include, if list is empty - all are generated");
-                    //TODO: Console.WriteLine("-TVF,--table-value-functions - comma-separated list of TVFs to include, if list is empty - all are generated");
+                    Console.WriteLine("-TVF,--table-value-functions - comma-separated list of TVFs to include, if list is empty - all are generated");
+                    Console.WriteLine("-ITVF,--ignore-table-value-functions - comma-separated list of TVFs to ignore");
                     Console.WriteLine("-IT,--ignore-tables <Tables> - comma-separated list of tables to exclude. Example: '[dbo].Table1,[master].Table2'");
                     Console.WriteLine("-INCT,--include-tables <Tables> - comma-separated list of tables to include. Example: '[dbo].Table1,[master].Table2'");
                     Console.WriteLine("-IV,--ignore-views <Views> - comma-separated list of view to exclude. Example: '[dbo].View1,[master].View2'");
                     Console.WriteLine("-FR,--foreign-key-regex <regex> - Regex to extract foreign property name. Example: 'FK_([a-zA-Z]+)_(?<PropertyName>.+)'");
                     Console.WriteLine("-CS,--connectionString <ConnectionString> - Connection string to the db, example: Data Source=.;Initial Catalog=Database;integrated security=SSPI");
-                    Console.WriteLine("-TD,--templates-directory <Path> - Path with template fies set.hbs and context.hbs");
+                    Console.WriteLine("-TD,--templates-directory <Path> - Path with template files set.hbs and context.hbs");
                     Console.WriteLine("-ETN,--extended-property-type-name <Name> - Extended property name to read model property type from, default is 'TypeName'. If column does not have extended property then model property type is inferred from the database column type.");
                     Console.WriteLine("-V,--verbose <Schema> - Show messages during execution");
                     Console.WriteLine("-CSD,--custom-settings-json <Path> - Path to custom settings json file");
@@ -47,6 +48,7 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine("-ISP,--ignore-stored-procedures - comma-separated list of SPs to exclude. Example: '[dbo].[sp1],[master].[sp2]'");
                     Console.WriteLine("-AMTM,--allow-many-to-many - default is not supported");
                     Console.WriteLine("-IFOMTM,--ignore-for-objects-many-to-many - comma-separated list of tables to exclude many-to-many relationships. Example: '[dbo].[Table1],[master].[Table2]'");
+                    Console.WriteLine("-NRT,--nullable-reference-types - Enable nullable-reference-types");
 
                     return;
                 }
@@ -129,6 +131,9 @@ namespace EfCoreScaffoldMssql
                 var ignoreForObjectsManyToMany = CommandLineHelper.GetParameterByName(args, "--ignore-for-objects-many-to-many")
                                              ?? CommandLineHelper.GetParameterByName(args, "-IFOMTM")
                                              ?? string.Empty;
+                
+                var nullableReferenceTypes = CommandLineHelper.HasParameterByName(args, "--nullable-reference-types")
+                                      || CommandLineHelper.HasParameterByName(args, "-NRT");
 
                 var includeSchemas = schemas.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToLower())
@@ -181,7 +186,8 @@ namespace EfCoreScaffoldMssql
                     AllowedTables = allowedTablesList,
                     IncludeTables = includeTablesList,
                     AllowManyToMany = allowManyToMany,
-                    IgnoreObjectsForManyToMany = excludeObjectsForManyToMany
+                    IgnoreObjectsForManyToMany = excludeObjectsForManyToMany,
+                    NullableReferenceTypes = nullableReferenceTypes
                 };
                 var scaffolder = new Scaffolder(options);
                 scaffolder.Generate();
