@@ -71,7 +71,7 @@ namespace EfCoreScaffoldMssql.Classes
             {
                 var typeDef = CSharpTypeDefinition;
 
-                if (IsNullable && (TypeName != "geometry" || EnableReferenceNullableTypes == true))
+                if (IsNullable && (TypeName != "geometry" || EnableReferenceNullableTypes))
                     return typeDef + "?";
 
                 return typeDef;

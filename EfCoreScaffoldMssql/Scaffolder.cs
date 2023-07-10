@@ -264,15 +264,15 @@ namespace EfCoreScaffoldMssql
                 if (_options.GenerateTableValuedFunctions)
                 {
                     tvfDefinitions = GetStoredObjectsDefinition(connection, SchemaSql.TableValueFunctionParametersSql, true, _options.IgnoreTableValuedFunctions);
-                    WriteLine("Table valued functions parameters information received");
+                    WriteLine($"Table valued functions parameters information received ({tvfDefinitions.Count} items)");
 
                     var tvfColumns = connection.ReadObjects<TableValuedColumn>(SchemaSql.TableValueFunctionColumnsSql);
-                    WriteLine("Table valued functions parameters information received");
                     foreach (var tvf in tvfDefinitions)
                     {
                         tvf.Columns = tvfColumns
                             .Where(c => c.Schema == tvf.Schema && c.FunctionName == tvf.Name)
                             .Cast<StoredObjectSetColumn>().ToList();
+                        WriteLine($"{tvf.Name}: schema information received");
                     }
                 }
 

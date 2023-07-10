@@ -139,6 +139,8 @@ WHERE type IN ('IF','TF')";
 	c.[name] AS [Name],
 	c.is_nullable AS [IsNullable],
 	type_name(c.system_type_id) AS [SqlType],
+    c.[precision] as [Precision],
+	c.scale as [Scale],
 	c.column_id AS [Order]
 FROM sys.columns c
 JOIN sys.objects obj ON obj.object_id = c.object_id
