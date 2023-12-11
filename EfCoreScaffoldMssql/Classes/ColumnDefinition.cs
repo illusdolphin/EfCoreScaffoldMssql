@@ -1,7 +1,4 @@
-﻿
-using Newtonsoft.Json;
-
-namespace EfCoreScaffoldMssql.Classes
+﻿namespace EfCoreScaffoldMssql.Classes
 {
     public class ColumnDefinition
     {

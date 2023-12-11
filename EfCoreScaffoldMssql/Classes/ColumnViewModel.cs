@@ -7,6 +7,7 @@ namespace EfCoreScaffoldMssql.Classes
     {
         public string DisplayName { get; set; }
         public bool IsString => CSharpType.StartsWith("string");
+        public bool IsBinary => CSharpType == "byte[]";
         public string TypeName
         {
             get
