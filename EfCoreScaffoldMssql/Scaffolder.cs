@@ -47,6 +47,7 @@ namespace EfCoreScaffoldMssql
             List<ColumnDefinition> columns, 
             List<KeyColumnDefinition> keyColumns,
             List<FkDefinition> fkDefinitions,
+            List<TriggerDefinition> triggerDefinitions,
             List<string> ignoreObjects,
             List<string> includeObjects,
             List<string> allowedObjects,
@@ -55,6 +56,7 @@ namespace EfCoreScaffoldMssql
         {
             keyColumns = keyColumns ?? new List<KeyColumnDefinition>();
             fkDefinitions = fkDefinitions ?? new List<FkDefinition>();
+            triggerDefinitions = triggerDefinitions ?? new List<TriggerDefinition>();
 
             foreach (var table in objects.OrderBy(x => x.EntityName))
             {
@@ -89,6 +91,9 @@ namespace EfCoreScaffoldMssql
                     .Where(x => x.FkSchema == table.SchemaName && x.FkTable == table.EntityName)
                     .ToList();
 
+                var tableTriggers = triggerDefinitions
+                    .Where(x => x.TableSchema == table.SchemaName && x.TableName == table.EntityName)
+                    .ToList();
 
                 if (objectsColumnsSettings != null)
                 {
@@ -130,6 +135,14 @@ namespace EfCoreScaffoldMssql
                     entityViewModel.Columns.Add(columnViewModel);
                 }
 
+                var triggerViewModels = new List<TriggerViewModel>();
+                foreach (var tableTrigger in tableTriggers)
+                {
+                    var triggerViewModel = tableTrigger.CloneCopy<TriggerDefinition, TriggerViewModel>();
+                    triggerViewModels.Add(triggerViewModel);
+                }
+                entityViewModel.Triggers = triggerViewModels;
+                
                 entities.Add(entityViewModel);
             }
         }
@@ -244,6 +257,9 @@ namespace EfCoreScaffoldMssql
                 var viewsColumns = connection.ReadObjects<ColumnDefinition>(string.Format(SchemaSql.ViewColumnsSql, _options.ExtendedPropertyTypeName));
                 WriteLine("Views columns information received");
 
+                var triggers = connection.ReadObjects<TriggerDefinition>(SchemaSql.TriggersSql);
+                WriteLine("Triggers information received");
+
                 var spDefinitions = new List<StoredObjectDefinition>();
                 if (_options.GenerateStoredProcedures)
                 {
@@ -280,9 +296,9 @@ namespace EfCoreScaffoldMssql
 
                 var entityViewModels = new List<EntityViewModel>();
 
-                ScaffoldEntities(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, _options.IgnoreTables, _options.IncludeTables, _options.AllowedTables, tablesColumnsSettingsList, defaultSchemaName);
+                ScaffoldEntities(entityViewModels, tables, tablesColumns, keyColumns, fkDefinitions, triggers, _options.IgnoreTables, _options.IncludeTables, _options.AllowedTables, tablesColumnsSettingsList, defaultSchemaName);
 
-                ScaffoldEntities(entityViewModels, views, viewsColumns, null, null, _options.IgnoreViews, null, null, viewsColumnsSettingsList, defaultSchemaName);
+                ScaffoldEntities(entityViewModels, views, viewsColumns, null, null, null, _options.IgnoreViews, null, null, viewsColumnsSettingsList, defaultSchemaName);
 
                 var pKeys =
                     (from pk in keyColumns
