@@ -44,6 +44,8 @@ namespace EfCoreScaffoldMssql
 
         public bool GenerateStoredProcedures { get; set; }
 
+        public bool GenerateTriggers { get; set; }
+
         public List<string> IgnoreStoredProcedure { get; set; }
 
         public bool GenerateTableValuedFunctions { get; set; }

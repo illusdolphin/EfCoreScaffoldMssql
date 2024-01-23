@@ -33,6 +33,7 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine($"-M,--models <Path> - path for models, default is '{defaultModels}'");
                     Console.WriteLine("-S,--schema <Schema> - comma-separated list of schema to include, default is not defined, meaning is to include all");
                     Console.WriteLine("-SP,--stored-procedures - comma-separated list of SPs to include, if list is empty - all are generated");
+                    Console.WriteLine("-TR, --triggers - enable triggers");
                     Console.WriteLine("-TVF,--table-value-functions - comma-separated list of TVFs to include, if list is empty - all are generated");
                     Console.WriteLine("-ITVF,--ignore-table-value-functions - comma-separated list of TVFs to ignore");
                     Console.WriteLine("-IT,--ignore-tables <Tables> - comma-separated list of tables to exclude. Example: '[dbo].Table1,[master].Table2'");
@@ -86,6 +87,9 @@ namespace EfCoreScaffoldMssql
 
                 var generateStoredProcedures = CommandLineHelper.HasParameterByName(args, "--stored-procedures")
                                || CommandLineHelper.HasParameterByName(args, "-SP");
+
+                var generateTriggers = CommandLineHelper.HasParameterByName(args, "--triggers")
+                                       || CommandLineHelper.HasParameterByName(args, "-TR");
 
                 var ignoreStoredProcedures = CommandLineHelper.GetParameterByName(args, "--ignore-stored-procedures")
                                        ?? CommandLineHelper.GetParameterByName(args, "-ISP")
@@ -173,6 +177,7 @@ namespace EfCoreScaffoldMssql
                     IgnoreTables = excludeTablesList,
                     IgnoreViews = excludeViewsList,
                     GenerateStoredProcedures = generateStoredProcedures,
+                    GenerateTriggers = generateTriggers,
                     IgnoreStoredProcedure = excludeStoredProceduresList,
                     GenerateTableValuedFunctions = generateTableValueFunctions,
                     IgnoreTableValuedFunctions = excludeTableValuedFunctionsList,

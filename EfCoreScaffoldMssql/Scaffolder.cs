@@ -257,8 +257,12 @@ namespace EfCoreScaffoldMssql
                 var viewsColumns = connection.ReadObjects<ColumnDefinition>(string.Format(SchemaSql.ViewColumnsSql, _options.ExtendedPropertyTypeName));
                 WriteLine("Views columns information received");
 
-                var triggers = connection.ReadObjects<TriggerDefinition>(SchemaSql.TriggersSql);
-                WriteLine("Triggers information received");
+                var triggers = new List<TriggerDefinition>();
+                if (_options.GenerateTriggers)
+                {
+                    triggers = connection.ReadObjects<TriggerDefinition>(SchemaSql.TriggersSql);
+                    WriteLine("Triggers information received");
+                }
 
                 var spDefinitions = new List<StoredObjectDefinition>();
                 if (_options.GenerateStoredProcedures)
