@@ -23,6 +23,7 @@ namespace EfCoreScaffoldMssql.Classes
         public bool HasForeignKeys => ForeignKeys.Any();
 
         public bool HasKey => Keys.Any();
+        public bool HasTriggers => Triggers.Any();
         public bool HasSimpleKey => Keys.Count == 1;
         public bool HasDefaultSimpleKey
         {
@@ -52,6 +53,9 @@ namespace EfCoreScaffoldMssql.Classes
         public List<ForeignKeyViewModel> ForeignKeys { get; set; }
 
         public List<ForeignKeyViewModel> InverseKeys { get; set; }
+
+        public List<TriggerViewModel> Triggers { get; set; }
+
         public List<Dependency> Dependencies { get; set; }
         public bool IsDefaultSchema { get; set; }
 

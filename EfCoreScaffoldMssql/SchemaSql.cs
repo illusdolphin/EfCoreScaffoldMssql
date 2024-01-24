@@ -33,6 +33,15 @@ LEFT OUTER JOIN Sys.computed_columns cc on c.object_id = cc.object_id and c.colu
 LEFT JOIN sys.extended_properties AS p ON p.major_id=t.object_id AND p.minor_id=c.column_id AND p.class=1 AND p.name = '{0}'
 ";
 
+        internal static string TriggersSql = @"SELECT 
+	s.name AS [TableSchema],
+	t.name AS [TableName],
+	tr.name AS [TriggerName]
+FROM sys.triggers tr
+JOIN sys.tables t ON t.object_id = tr.parent_id
+JOIN sys.schemas s ON s.schema_id = t.schema_id
+";
+
         internal static string ViewColumnsSql = @"select 
 	c.name as [Name], 
 	s.name as SchemaName, 
