@@ -1,5 +1,4 @@
-﻿using System;
-using EfCoreScaffoldMssql.Helpers;
+﻿using EfCoreScaffoldMssql.Helpers;
 
 namespace EfCoreScaffoldMssql.Classes
 {
@@ -71,6 +70,17 @@ namespace EfCoreScaffoldMssql.Classes
             get
             {
                 var typeDef = CSharpTypeDefinition;
+
+                if (!EnableReferenceNullableTypes)
+                { 
+                    switch (typeDef)
+                    {
+                        case "string":
+                        case "byte[]":
+                        case "object":
+                            return typeDef;
+                    }
+                }
 
                 if (IsNullable && (TypeName != "geometry" || EnableReferenceNullableTypes))
                     return typeDef + "?";
