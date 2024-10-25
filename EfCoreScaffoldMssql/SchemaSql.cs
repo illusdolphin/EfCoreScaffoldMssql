@@ -3,14 +3,14 @@ namespace EfCoreScaffoldMssql
 {
     internal static class SchemaSql
     {
-        internal static string TablesSql = @"SELECT s.name as SchemaName, t.name as EntityName, NULL as Definition, convert(bit, 0) AS IsViewEntity FROM Sys.tables t
+        internal const string TablesSql = @"SELECT s.name as SchemaName, t.name as EntityName, NULL as Definition, convert(bit, 0) AS IsViewEntity FROM Sys.tables t
 JOIN Sys.schemas s on s.schema_id = t.schema_id";
 
-        internal static string ViewsSql = @"SELECT s.name as SchemaName, t.name as EntityName,
+        internal const string ViewsSql = @"SELECT s.name as SchemaName, t.name as EntityName,
 (SELECT OBJECT_DEFINITION(OBJECT_ID(s.[name]+'.'+t.[name]) )) as Definition, convert(bit, 1) AS IsViewEntity FROM Sys.views t
 JOIN Sys.schemas s on s.schema_id = t.schema_id";
 
-        internal static string TableColumnsSql = @"select 
+        internal const string TableColumnsSql = @"select 
 	c.name as [Name], 
 	s.name as SchemaName, 
 	t.name as ObjectName,
@@ -33,16 +33,17 @@ LEFT OUTER JOIN Sys.computed_columns cc on c.object_id = cc.object_id and c.colu
 LEFT JOIN sys.extended_properties AS p ON p.major_id=t.object_id AND p.minor_id=c.column_id AND p.class=1 AND p.name = '{0}'
 ";
 
-        internal static string TriggersSql = @"SELECT 
+        internal const string TriggersSql = @"SELECT 
 	s.name AS [TableSchema],
 	t.name AS [TableName],
 	tr.name AS [TriggerName]
 FROM sys.triggers tr
 JOIN sys.tables t ON t.object_id = tr.parent_id
 JOIN sys.schemas s ON s.schema_id = t.schema_id
+ORDER BY [TableSchema], [TableName], [TriggerName]
 ";
 
-        internal static string ViewColumnsSql = @"select 
+        internal const string ViewColumnsSql = @"select 
 	c.name as [Name], 
 	s.name as SchemaName, 
 	v.name as ObjectName,
@@ -65,7 +66,7 @@ LEFT OUTER JOIN Sys.computed_columns cc on c.object_id = cc.object_id and c.colu
 LEFT JOIN sys.extended_properties AS p ON p.major_id=v.object_id AND p.minor_id=c.column_id AND p.class=1 AND p.name = '{0}'
 ";
 
-        internal static string ForeignKeysSql = @"SELECT RC.CONSTRAINT_NAME FkName 
+        internal const string ForeignKeysSql = @"SELECT RC.CONSTRAINT_NAME FkName 
 , KF.TABLE_SCHEMA FkSchema
 , KF.TABLE_NAME FkTable
 , KF.COLUMN_NAME FkColumn
@@ -86,7 +87,7 @@ JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS TC on TC.CONSTRAINT_SCHEMA = OBJECT_SC
 INNER HASH JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE TU on TC.CONSTRAINT_NAME = TU.CONSTRAINT_NAME AND TU.ORDINAL_POSITION = KF.ORDINAL_POSITION
 ORDER BY KP.TABLE_NAME, KP.CONSTRAINT_NAME";
 
-        internal static string KeyColumnsSql = @"SELECT 
+        internal const string KeyColumnsSql = @"SELECT 
   s.name as TableSchema,
   t.name as TableName,
   c.name as ColumnName,
@@ -99,9 +100,9 @@ JOIN sys.index_columns ic ON ic.object_id = c.object_id AND ic.column_id = c.col
 JOIN sys.indexes i ON ic.object_id = i.object_id AND ic.index_id = i.index_id
 WHERE i.is_primary_key = 1";
 
-        internal static string DefaultSchemaSql = @"SELECT SCHEMA_NAME() AS SchemaName";
+        internal const string DefaultSchemaSql = @"SELECT SCHEMA_NAME() AS SchemaName";
 
-        internal static string StoredProcedureParametersSql = @"SELECT  
+        internal const string StoredProcedureParametersSql = @"SELECT  
 s.[name] AS [Schema],
 p.[name] AS [Name],
 par.[name] AS [ParameterName],
@@ -116,9 +117,10 @@ CONVERT(sysname, CASE WHEN system_type_id in (35, 99, 167, 175, 231, 239) THEN S
 (SELECT OBJECT_DEFINITION(OBJECT_ID(s.[name]+'.'+p.[name]) )) as Definition
 FROM sys.procedures p
 LEFT JOIN sys.parameters par on par.object_id = p.object_id
-JOIN sys.schemas s ON s.schema_id = p.schema_id";
+JOIN sys.schemas s ON s.schema_id = p.schema_id
+ORDER BY [Schema], [Name]";
 
-        internal static string StoredProcedureSetSql = @"SELECT 
+        internal const string StoredProcedureSetSql = @"SELECT 
 name AS [Name],
 column_ordinal AS [Order],
 is_nullable AS [IsNullable],
@@ -126,9 +128,10 @@ type_name(system_type_id) AS [SqlType],
 [precision] as [Precision],
 scale as [Scale],
 max_length AS [MaxLength]
-FROM sys.dm_exec_describe_first_result_set ('{0}.{1}', NULL, 0)";
+FROM sys.dm_exec_describe_first_result_set ('{0}.{1}', NULL, 0)
+ORDER By [Order]";
 
-        internal static string TableValueFunctionParametersSql = @"SELECT 
+        internal const string TableValueFunctionParametersSql = @"SELECT 
 	SCHEMA_NAME(obj.schema_id) AS [Schema],
 	obj.[name] as [Name],
 	p.[name] AS [ParameterName],
@@ -140,9 +143,10 @@ FROM sys.dm_exec_describe_first_result_set ('{0}.{1}', NULL, 0)";
 FROM sys.objects obj
 JOIN sys.schemas s ON s.schema_id = obj.schema_id
 LEFT JOIN sys.all_parameters p on p.object_id = obj.object_id
-WHERE type IN ('IF','TF')";
+WHERE type IN ('IF','TF')
+ORDER BY [Schema], [Name]";
 
-        internal static string TableValueFunctionColumnsSql = @"SELECT 
+        internal const string TableValueFunctionColumnsSql = @"SELECT 
 	SCHEMA_NAME(obj.schema_id) AS [Schema],
     obj.[name] AS [FunctionName],
 	c.[name] AS [Name],
@@ -154,6 +158,7 @@ WHERE type IN ('IF','TF')";
 FROM sys.columns c
 JOIN sys.objects obj ON obj.object_id = c.object_id
 JOIN sys.schemas s ON s.schema_id = obj.schema_id
-WHERE obj.[type] IN ('IF','TF')";
+WHERE obj.[type] IN ('IF','TF')
+ORDER By [Order]";
 	}
 }
