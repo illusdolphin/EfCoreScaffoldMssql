@@ -40,6 +40,7 @@ LEFT JOIN sys.extended_properties AS p ON p.major_id=t.object_id AND p.minor_id=
 FROM sys.triggers tr
 JOIN sys.tables t ON t.object_id = tr.parent_id
 JOIN sys.schemas s ON s.schema_id = t.schema_id
+ORDER BY [TableSchema], [TableName], [TriggerName]
 ";
 
         internal static string ViewColumnsSql = @"select 
@@ -116,7 +117,8 @@ CONVERT(sysname, CASE WHEN system_type_id in (35, 99, 167, 175, 231, 239) THEN S
 (SELECT OBJECT_DEFINITION(OBJECT_ID(s.[name]+'.'+p.[name]) )) as Definition
 FROM sys.procedures p
 LEFT JOIN sys.parameters par on par.object_id = p.object_id
-JOIN sys.schemas s ON s.schema_id = p.schema_id";
+JOIN sys.schemas s ON s.schema_id = p.schema_id
+ORDER BY [Schema], [Name]";
 
         internal static string StoredProcedureSetSql = @"SELECT 
 name AS [Name],
@@ -126,7 +128,8 @@ type_name(system_type_id) AS [SqlType],
 [precision] as [Precision],
 scale as [Scale],
 max_length AS [MaxLength]
-FROM sys.dm_exec_describe_first_result_set ('{0}.{1}', NULL, 0)";
+FROM sys.dm_exec_describe_first_result_set ('{0}.{1}', NULL, 0)
+ORDER By [Order]";
 
         internal static string TableValueFunctionParametersSql = @"SELECT 
 	SCHEMA_NAME(obj.schema_id) AS [Schema],
@@ -140,7 +143,8 @@ FROM sys.dm_exec_describe_first_result_set ('{0}.{1}', NULL, 0)";
 FROM sys.objects obj
 JOIN sys.schemas s ON s.schema_id = obj.schema_id
 LEFT JOIN sys.all_parameters p on p.object_id = obj.object_id
-WHERE type IN ('IF','TF')";
+WHERE type IN ('IF','TF')
+ORDER BY [Schema], [Name]";
 
         internal static string TableValueFunctionColumnsSql = @"SELECT 
 	SCHEMA_NAME(obj.schema_id) AS [Schema],
@@ -154,6 +158,7 @@ WHERE type IN ('IF','TF')";
 FROM sys.columns c
 JOIN sys.objects obj ON obj.object_id = c.object_id
 JOIN sys.schemas s ON s.schema_id = obj.schema_id
-WHERE obj.[type] IN ('IF','TF')";
+WHERE obj.[type] IN ('IF','TF')
+ORDER By [Order]";
 	}
 }
