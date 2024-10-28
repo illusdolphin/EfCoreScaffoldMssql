@@ -98,7 +98,8 @@ JOIN sys.schemas s ON s.schema_id = t.schema_id
 JOIN sys.columns c ON c.object_id = t.object_id
 JOIN sys.index_columns ic ON ic.object_id = c.object_id AND ic.column_id = c.column_id
 JOIN sys.indexes i ON ic.object_id = i.object_id AND ic.index_id = i.index_id
-WHERE i.is_primary_key = 1";
+WHERE i.is_primary_key = 1
+ORDER BY [TableSchema], [TableName], [KeyName], [KeyOrder]";
 
         internal const string DefaultSchemaSql = @"SELECT SCHEMA_NAME() AS SchemaName";
 
@@ -118,7 +119,7 @@ CONVERT(sysname, CASE WHEN system_type_id in (35, 99, 167, 175, 231, 239) THEN S
 FROM sys.procedures p
 LEFT JOIN sys.parameters par on par.object_id = p.object_id
 JOIN sys.schemas s ON s.schema_id = p.schema_id
-ORDER BY [Schema], [Name]";
+ORDER BY [Schema], [Name], [Order]";
 
         internal const string StoredProcedureSetSql = @"SELECT 
 name AS [Name],
@@ -144,7 +145,7 @@ FROM sys.objects obj
 JOIN sys.schemas s ON s.schema_id = obj.schema_id
 LEFT JOIN sys.all_parameters p on p.object_id = obj.object_id
 WHERE type IN ('IF','TF')
-ORDER BY [Schema], [Name]";
+ORDER BY [Schema], [Name], [Order]";
 
         internal const string TableValueFunctionColumnsSql = @"SELECT 
 	SCHEMA_NAME(obj.schema_id) AS [Schema],
@@ -159,6 +160,6 @@ FROM sys.columns c
 JOIN sys.objects obj ON obj.object_id = c.object_id
 JOIN sys.schemas s ON s.schema_id = obj.schema_id
 WHERE obj.[type] IN ('IF','TF')
-ORDER By [Order]";
+ORDER By [Schema], [Name], [Order]";
 	}
 }
