@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using EfCoreScaffoldMssql.Enums;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace EfCoreScaffoldMssql
@@ -61,5 +62,7 @@ namespace EfCoreScaffoldMssql
         public bool NullableReferenceTypes { get; set; }
 
         public List<string> IgnoreObjectsForManyToMany { get; set; }
+
+        public EntityFrameworkVersion EntityFrameworkVersion { get; set; }
     }
 }

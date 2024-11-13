@@ -160,6 +160,6 @@ FROM sys.columns c
 JOIN sys.objects obj ON obj.object_id = c.object_id
 JOIN sys.schemas s ON s.schema_id = obj.schema_id
 WHERE obj.[type] IN ('IF','TF')
-ORDER By [Schema], [Name], [Order]";
+ORDER By [Schema], [FunctionName], [Order]";
 	}
 }

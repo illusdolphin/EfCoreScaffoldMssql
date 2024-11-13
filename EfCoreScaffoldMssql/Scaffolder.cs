@@ -132,6 +132,8 @@ namespace EfCoreScaffoldMssql
 
                     columnViewModel.DisplayName = PropertyHelper.GetColumnNameToDisplay(tableColumn.Name, table.EntityName, objectsColumnsSettings);
 
+                    columnViewModel.EntityFrameworkVersion = _options.EntityFrameworkVersion;
+
                     entityViewModel.Columns.Add(columnViewModel);
                 }
 
@@ -587,6 +589,7 @@ namespace EfCoreScaffoldMssql
                     Definition = p.Definition,
                     Columns = p.Columns.Select(c => new ColumnViewModel
                     {
+                        EntityFrameworkVersion = _options.EntityFrameworkVersion,
                         SchemaName = p.Schema,
                         Name = c.Name,
                         ColumnTypeName = c.SqlType,

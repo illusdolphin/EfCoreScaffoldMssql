@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using EfCoreScaffoldMssql.Enums;
 using EfCoreScaffoldMssql.Helpers;
 using OracleDbUpdater.Helpers;
 
@@ -50,6 +51,7 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine("-AMTM,--allow-many-to-many - default is not supported");
                     Console.WriteLine("-IFOMTM,--ignore-for-objects-many-to-many - comma-separated list of tables to exclude many-to-many relationships. Example: '[dbo].[Table1],[master].[Table2]'");
                     Console.WriteLine("-NRT,--nullable-reference-types - Enable nullable-reference-types");
+                    Console.WriteLine("-FV,--framework-version - Entity Framework version. Possible values: ef6, efcore6. Default: efcore6");
 
                     return;
                 }
@@ -139,6 +141,15 @@ namespace EfCoreScaffoldMssql
                 var nullableReferenceTypes = CommandLineHelper.HasParameterByName(args, "--nullable-reference-types")
                                       || CommandLineHelper.HasParameterByName(args, "-NRT");
 
+                var efVersionString = CommandLineHelper.GetParameterByName(args, "--framework-version")
+                    ?? CommandLineHelper.GetParameterByName(args, "-FV");
+
+                EntityFrameworkVersion efVersion;
+                if (efVersionString == null)
+                    efVersion = EntityFrameworkVersion.EfCore6;
+                else
+                    efVersion = (EntityFrameworkVersion)Enum.Parse(typeof(EntityFrameworkVersion), efVersionString, true);
+
                 var includeSchemas = schemas.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.ToLower())
                     .ToList();
@@ -192,7 +203,8 @@ namespace EfCoreScaffoldMssql
                     IncludeTables = includeTablesList,
                     AllowManyToMany = allowManyToMany,
                     IgnoreObjectsForManyToMany = excludeObjectsForManyToMany,
-                    NullableReferenceTypes = nullableReferenceTypes
+                    NullableReferenceTypes = nullableReferenceTypes,
+                    EntityFrameworkVersion = efVersion,
                 };
                 var scaffolder = new Scaffolder(options);
                 scaffolder.Generate();

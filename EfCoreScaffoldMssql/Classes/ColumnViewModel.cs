@@ -1,9 +1,12 @@
-﻿using EfCoreScaffoldMssql.Helpers;
+﻿using EfCoreScaffoldMssql.Enums;
+using EfCoreScaffoldMssql.Helpers;
 
 namespace EfCoreScaffoldMssql.Classes
 {
     public class ColumnViewModel: ColumnDefinition
     {
+        public EntityFrameworkVersion EntityFrameworkVersion { get; set; }
+
         public string DisplayName { get; set; }
         public bool IsString => CSharpType.StartsWith("string");
         public bool IsBinary => CSharpType == "byte[]";
@@ -55,7 +58,7 @@ namespace EfCoreScaffoldMssql.Classes
                     case "datetime2":
                     case "geometry":
                     case "smalldatetime":
-                    case "decimal":
+                    case "decimal" when EntityFrameworkVersion == EntityFrameworkVersion.EfCore6:
                         return true;
                 }
 
