@@ -51,6 +51,7 @@
     <Compile Include="Classes\StoredObjectDefinition.cs" />
     <Compile Include="Classes\TriggerDefinition.cs" />
     <Compile Include="Classes\TriggerViewModel.cs" />
+    <Compile Include="Enums\EntityFrameworkVersion.cs" />
     <Compile Include="Helpers\CloneHelper.cs" />
     <Compile Include="Helpers\HBSHelper.cs" />
     <Compile Include="Helpers\PropertyHelper.cs" />
