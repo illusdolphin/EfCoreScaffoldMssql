@@ -82,10 +82,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Handlebars.Net">
-      <Version>1.9.5</Version>
+      <Version>2.1.6</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
-      <Version>13.0.2</Version>
+      <Version>13.0.3</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,40 +1,33 @@
 ﻿using EfCoreScaffoldMssql.Classes;
 using HandlebarsDotNet;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace EfCoreScaffoldMssql.Helpers
 {
     public static class HBSHelper
     {
-        public static void TableContainsAllColumns(TextWriter output, HelperOptions options, dynamic context, params object[] arguments)
+        public static void TableContainsAllColumns(EncodedTextWriter output, BlockHelperOptions options, Context context, Arguments arguments)
         {
-            var stringArguments = arguments.Where(x => x is string).Select(x => x.ToString()).Where(x => !string.IsNullOrEmpty(x)).ToList<string>();
-            if (context is object && stringArguments != null && stringArguments.Count > 0)
+            var stringArguments = arguments.Where(x => x is string).Select(x => x.ToString()).Where(x => !string.IsNullOrEmpty(x)).ToList();
+            if (stringArguments.Count > 0)
             {
-                var contextObject = (object)context;
-                var columnsList = new List<ColumnViewModel>();
-                var columns = contextObject.GetType().GetProperty("Columns")?.GetValue(contextObject, null);
-                if (columns != null && columns is IList<ColumnViewModel>)
+                if (!(context.Value is EntityViewModel contextObject))
                 {
-                    columnsList = ((IList<ColumnViewModel>)columns).ToList();
-                }
-                else
-                {
-                    Console.WriteLine($"#TableContainsAllColumns: Can not find columns for type {contextObject.GetType().GetProperty("EntityName")?.GetValue(contextObject, null)}");
-                    options.Inverse(output, (object)context);
+                    Console.WriteLine($"#TableContainsAllColumns: Wring context: {context.Value.GetType().FullName}");
+                    options.Inverse(output, context);
                     return;
                 }
+                
+                var columnsList = contextObject.Columns;
 
                 foreach (var stringArgument in stringArguments)
                 {
                     var columnArguments = stringArgument.Split(':');
-                    ColumnViewModel column = null;
+                    ColumnViewModel column;
                     if (columnArguments.Length > 1)
                     {
-                        var isNullable = columnArguments[1] == "Nullable" ? true : false;
+                        var isNullable = columnArguments[1] == "Nullable";
                         column = columnsList.FirstOrDefault(x => x.Name == columnArguments[0] && x.IsNullable == isNullable);
                     }
                     else
@@ -43,14 +36,43 @@ namespace EfCoreScaffoldMssql.Helpers
                     }
                     if (column == null)
                     {
-                        options.Inverse(output, (object)context);
+                        options.Inverse(output, context);
                         return;
                     }
                 }
                 options.Template(output, (object)context);
                 return;
             }
-            options.Inverse(output, (object)context);
+            options.Inverse(output, context);
+        }
+
+        public static void Iif(EncodedTextWriter output, BlockHelperOptions options, Context context, Arguments arguments)
+        {
+            if (arguments.Length != 3)
+            {
+                output.Write("ifCond:Wrong number of arguments");
+                return;
+            }
+            
+            var left = arguments.At<string>(0);
+            var op = arguments.At<string>(1);
+            var right = arguments.At<string>(2);
+
+            if (op != "==" && op != "!=")
+            {
+                output.Write("ifCond:Wrong operator");
+                return;
+            }
+
+            if (op == "==")
+            {
+                if (left == right) options.Template(output, context);
+                else options.Inverse(output, context);
+                return;
+            }
+
+            if (left != right) options.Template(output, context);
+            else options.Inverse(output, context);
         }
     }
 }

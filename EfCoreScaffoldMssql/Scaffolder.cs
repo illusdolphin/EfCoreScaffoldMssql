@@ -153,8 +153,8 @@ namespace EfCoreScaffoldMssql
         {
             const string setFileName = "set.hbs";
             const string contextFileName = "context.hbs";
-            Func<object, string> templateSet;
-            Func<object, string> templateContext;
+            HandlebarsTemplate<object, object> templateSet;
+            HandlebarsTemplate<object, object> templateContext;
             var fksPresetList = new List<FkPresetDefinition>();
             var tablesColumnsSettingsList = new List<ObjectColumnsSettingModel>();
             var viewsColumnsSettingsList = new List<ObjectColumnsSettingModel>();
@@ -162,6 +162,7 @@ namespace EfCoreScaffoldMssql
             var entityPluralizeNameSettingsList = new List<EntityPluralizeNameDefinition>();
             var entityDisplayNameSettingsList = new List<EntityDisplayNameDefinition>();
             Handlebars.RegisterHelper("TableContainsAllColumns", HBSHelper.TableContainsAllColumns);
+            Handlebars.RegisterHelper("iif", HBSHelper.Iif);
 
             try
             {
@@ -355,9 +356,9 @@ namespace EfCoreScaffoldMssql
                         var inversePropertyName = string.Empty;
 
                         var fkPreset = fksPresetList.FirstOrDefault(x => x.ForeignKeyName == foreignKey.FkName && x.FkPropertyNames != null);
-                        var hasFKPreset = fkPreset != null && fkPreset.FkPropertyNames != null;
+                        var hasFkPreset = fkPreset != null && fkPreset.FkPropertyNames != null;
 
-                        if (hasFKPreset)
+                        if (hasFkPreset)
                         {
                             propertyName = fkPreset.FkPropertyNames.PropertyName;
                             inversePropertyName = fkPreset.FkPropertyNames.InversePropertyName;
@@ -381,7 +382,7 @@ namespace EfCoreScaffoldMssql
                             }
                         }
 
-                        if (fkPropertyDisplayNamesSettingsList != null && fkPropertyDisplayNamesSettingsList.Count > 0 && !hasFKPreset)
+                        if (fkPropertyDisplayNamesSettingsList != null && fkPropertyDisplayNamesSettingsList.Count > 0 && !hasFkPreset)
                         {
                             var fkPropertyDisplayNameSetting = fkPropertyDisplayNamesSettingsList.Find(x => x.Name == propertyName);
                             if (fkPropertyDisplayNameSetting != null && !string.IsNullOrEmpty(fkPropertyDisplayNameSetting.DisplayName))
@@ -400,7 +401,7 @@ namespace EfCoreScaffoldMssql
 
                         if (!isOneToOne)
                         {
-                            if (!hasFKPreset || !string.Equals(fkPreset.FkPropertyNames.InversePropertyName, inversePropertyName, StringComparison.OrdinalIgnoreCase))
+                            if (!hasFkPreset || !string.Equals(fkPreset.FkPropertyNames.InversePropertyName, inversePropertyName, StringComparison.OrdinalIgnoreCase))
                             {
                                 inversePropertyName = StringHelper.Pluralize(inversePropertyName);
                             }
@@ -572,7 +573,7 @@ namespace EfCoreScaffoldMssql
         private void WriteObjectSets(
             IEnumerable<StoredObjectDefinition> objectDefinitions, 
             string modelsDirectory, 
-            Func<object, string> templateSet, 
+            HandlebarsTemplate<object, object> templateSet, 
             List<string> fileNames, 
             List<ObjectColumnsSettingModel> objectsColumnsSettings, 
             List<EntityPluralizeNameDefinition> entityPluralizeNameSettingsList)
