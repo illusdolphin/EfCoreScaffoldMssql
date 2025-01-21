@@ -41,6 +41,7 @@ namespace EfCoreScaffoldMssql
                     Console.WriteLine("-INCT,--include-tables <Tables> - comma-separated list of tables to include. Example: '[dbo].Table1,[master].Table2'");
                     Console.WriteLine("-IV,--ignore-views <Views> - comma-separated list of view to exclude. Example: '[dbo].View1,[master].View2'");
                     Console.WriteLine("-FR,--foreign-key-regex <regex> - Regex to extract foreign property name. Example: 'FK_([a-zA-Z]+)_(?<PropertyName>.+)'");
+                    Console.WriteLine("-IFR,--ignore-foreign-key-regex <regex> - Regex to ignore foreign property name. Example: 'FK_SomeTable'");
                     Console.WriteLine("-CS,--connectionString <ConnectionString> - Connection string to the db, example: Data Source=.;Initial Catalog=Database;integrated security=SSPI");
                     Console.WriteLine("-TD,--templates-directory <Path> - Path with template files set.hbs and context.hbs");
                     Console.WriteLine("-ETN,--extended-property-type-name <Name> - Extended property name to read model property type from, default is 'TypeName'. If column does not have extended property then model property type is inferred from the database column type.");
@@ -106,6 +107,10 @@ namespace EfCoreScaffoldMssql
 
                 var fkPropertyRegex = CommandLineHelper.GetParameterByName(args, "--foreign-key-regex")
                                        ?? CommandLineHelper.GetParameterByName(args, "-FR")
+                                       ?? string.Empty;
+
+                var fkIgnorePropertyRegex = CommandLineHelper.GetParameterByName(args, "--ignore-foreign-key-regex")
+                                       ?? CommandLineHelper.GetParameterByName(args, "-IFR")
                                        ?? string.Empty;
 
                 var connectionString = CommandLineHelper.GetParameterByName(args, "--connectionString")
@@ -194,6 +199,7 @@ namespace EfCoreScaffoldMssql
                     IgnoreTableValuedFunctions = excludeTableValuedFunctionsList,
                     Namespace = @namespace,
                     ForeignPropertyRegex = fkPropertyRegex,
+                    IgnoreForeignPropertyRegex = fkIgnorePropertyRegex,
                     ContextName = contextName,
                     IsVerbose = isVerbose,
                     ExtendedPropertyTypeName = extendedPropertyTypeName,

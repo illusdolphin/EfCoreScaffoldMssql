@@ -215,13 +215,19 @@ namespace EfCoreScaffoldMssql
 
             var fkNamesSkipList = fksPresetList.Where(x => x.FkPropertyNames == null).Select(x => x.ForeignKeyName).ToList();
 
-
             using (var connection = new SqlConnection(_options.ConnectionString))
             {
                 connection.Open();
                 WriteLine("Connected to the database");
 
                 var fkDefinitionsSource = connection.ReadObjects<FkDefinitionSource>(SchemaSql.ForeignKeysSql);
+
+                if (!string.IsNullOrEmpty(_options.IgnoreForeignPropertyRegex))
+                {
+                    var regEx = new Regex(_options.IgnoreForeignPropertyRegex, RegexOptions.Compiled);
+                    fkDefinitionsSource.RemoveAll(fk => regEx.IsMatch(fk.FkName));
+                }
+
                 var fkDefinitions =
                     (from s in fkDefinitionsSource.Where(x => !fkNamesSkipList.Contains(x.FkName))
                     group s by new {s.PkSchema, s.FkSchema, s.FkTable, s.PkTable, s.FkName, s.PkName, s.MatchOption, s.UpdateRule, s.DeleteRule}

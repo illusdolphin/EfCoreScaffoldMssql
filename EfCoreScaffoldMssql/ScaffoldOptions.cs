@@ -31,6 +31,8 @@ namespace EfCoreScaffoldMssql
 
         public string ForeignPropertyRegex { get; set; }
 
+        public string IgnoreForeignPropertyRegex { get; set; }
+
         public bool IsVerbose { get; set; }
 
         public List<string> Schemas { get; set; }
