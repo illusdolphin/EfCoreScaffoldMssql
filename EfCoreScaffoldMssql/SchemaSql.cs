@@ -36,7 +36,8 @@ LEFT JOIN sys.extended_properties AS p ON p.major_id=t.object_id AND p.minor_id=
         internal const string TriggersSql = @"SELECT 
 	s.name AS [TableSchema],
 	t.name AS [TableName],
-	tr.name AS [TriggerName]
+	tr.name AS [TriggerName],
+	(SELECT OBJECT_DEFINITION(OBJECT_ID(s.[name]+'.'+tr.[name]) )) as [Definition]
 FROM sys.triggers tr
 JOIN sys.tables t ON t.object_id = tr.parent_id
 JOIN sys.schemas s ON s.schema_id = t.schema_id

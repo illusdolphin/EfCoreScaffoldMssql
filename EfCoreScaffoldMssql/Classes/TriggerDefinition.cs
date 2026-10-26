@@ -5,5 +5,6 @@
         public string TableSchema { get; set; }
         public string TableName { get; set; }
         public string TriggerName { get; set; }
+        public string Definition { get; set; }
     }
 }

@@ -270,6 +270,9 @@ namespace EfCoreScaffoldMssql
                 if (_options.GenerateTriggers)
                 {
                     triggers = connection.ReadObjects<TriggerDefinition>(SchemaSql.TriggersSql);
+                    foreach (var trigger in triggers)
+                        trigger.Definition = $"\n///{trigger.Definition.Replace("\n", "\n///")}";
+                    
                     WriteLine("Triggers information received");
                 }
 
@@ -289,7 +292,6 @@ namespace EfCoreScaffoldMssql
                 }
 
                 var tvfDefinitions = new List<StoredObjectDefinition>();
-
                 if (_options.GenerateTableValuedFunctions)
                 {
                     tvfDefinitions = GetStoredObjectsDefinition(connection, SchemaSql.TableValueFunctionParametersSql, true, _options.IgnoreTableValuedFunctions);
